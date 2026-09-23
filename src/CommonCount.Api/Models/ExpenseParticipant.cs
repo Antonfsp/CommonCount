@@ -7,8 +7,8 @@ public class ExpenseParticipant
     public int ExpenseId { get; set; }
     public Expense Expense { get; set; } = null!;
 
-    public int UserId { get; set; }
-    public User User { get; set; } = null!;
+    public int MemberId { get; set; }
+    public GroupMember Member { get; set; } = null!;
 
-    public decimal ShareAmount { get; set; } // part de cette personne dans la dépense
+    public decimal ShareAmount { get; set; } //shared amount of the participant
 }

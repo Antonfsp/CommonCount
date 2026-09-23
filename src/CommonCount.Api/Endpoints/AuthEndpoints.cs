@@ -2,7 +2,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using CommonCount.Api.DTOs;
 using CommonCount.Api.Services;
-using Microsoft.AspNetCore.SignalR.Protocol;
 
 namespace CommonCount.Api.Endpoints;
 
