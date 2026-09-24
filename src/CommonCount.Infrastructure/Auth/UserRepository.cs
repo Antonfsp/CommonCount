@@ -1,7 +1,8 @@
 using CommonCount.Application.Auth;
-using CommonCount.Domain.Entities;
 using CommonCount.Infrastructure.Data;
+using CommonCount.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+
 
 namespace CommonCount.Infrastructure.Auth;
 
