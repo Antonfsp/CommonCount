@@ -1,9 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using CommonCount.Api.DTOs;
-using CommonCount.Api.Services;
+using CommonCount.Application.Auth;
 
-namespace CommonCount.Api.Endpoints;
+namespace CommonCount.Api.Auth;
 
 public static class AuthEndpoints
 {
@@ -20,7 +19,7 @@ public static class AuthEndpoints
                 return Results.BadRequest(new { message = result.Error });
             }
 
-            var response = new AuthReponse
+            var response = new AuthResponse
             {
                 Id = result.Value!.Id,
                 Email = result.Value.Email,
@@ -54,7 +53,7 @@ public static class AuthEndpoints
         {
             var userId = user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
             var email = user.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
-            return Results.Ok(new { userId, email });
+            return Results.Ok(new { userId = userId, email = email });
         })
         .RequireAuthorization()
         .WithName("Me");

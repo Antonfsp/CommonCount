@@ -1,14 +1,14 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using CommonCount.Api.Models;
-using Microsoft.AspNetCore.Authorization.Infrastructure;
+using CommonCount.Application.Auth;
+using Microsoft.Extensions.Configuration;
+using CommonCount.Domain.Entities;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.VisualBasic;
 
-namespace CommonCount.Api.Services;
+namespace CommonCount.Infrastructure.Auth;
 
-public class TokenService
+public class TokenService : ITokenService
 {
     private readonly IConfiguration _config;
 

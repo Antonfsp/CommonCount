@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using CommonCount.Api.Data;
 using Scalar.AspNetCore;
-using CommonCount.Api.Services;
-using CommonCount.Api.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using CommonCount.Application.Auth;
+using CommonCount.Infrastructure.Auth;
+using CommonCount.Infrastructure.Data;
+using CommonCount.Api.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,8 +20,10 @@ builder.Services.AddValidation();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IPasswordHasher, PasswordHasherService>();
 builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<TokenService>();
 
 // JWT authentication setup
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

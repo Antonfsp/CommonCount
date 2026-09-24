@@ -1,4 +1,4 @@
-namespace CommonCount.Api.Models;
+namespace CommonCount.Domain.Entities;
 
 public class ExpenseParticipant
 {

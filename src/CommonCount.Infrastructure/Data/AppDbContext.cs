@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using CommonCount.Api.Models;
+using CommonCount.Domain.Entities;
 
-namespace CommonCount.Api.Data;
+namespace CommonCount.Infrastructure.Data;
 
 public class AppDbContext : DbContext
 {

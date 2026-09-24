@@ -1,5 +1,8 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/CommonCount.Api/CommonCount.Api.csproj" />
+    <Project Path="src/CommonCount.Application/CommonCount.Application.csproj" />
+    <Project Path="src/CommonCount.Domain/CommonCount.Domain.csproj" />
+    <Project Path="src/CommonCount.Infrastructure/CommonCount.Infrastructure.csproj" />
   </Folder>
 </Solution>

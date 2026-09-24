@@ -1,4 +1,5 @@
-namespace CommonCount.Api.Common;
+namespace CommonCount.Application.Common;
+
 
 public class Result<T>
 {

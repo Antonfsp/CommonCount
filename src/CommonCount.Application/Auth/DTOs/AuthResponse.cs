@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace CommonCount.Api.DTOs;
+namespace CommonCount.Api.Auth;
 
-public class AuthReponse
+public class AuthResponse
 {
     public int Id { get; set; }
 

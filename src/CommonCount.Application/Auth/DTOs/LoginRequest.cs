@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace CommonCount.Api.DTOs;
+namespace CommonCount.Application.Auth;
 
-public class RegisterRequest
+public class LoginRequest
 {
     [Required]
     [EmailAddress]
@@ -11,6 +11,4 @@ public class RegisterRequest
     [Required]
     [MinLength(6)]
     public string Password { get; set; } = string.Empty;
-    
-    public string DisplayName { get; set;} = string.Empty;
 }
