@@ -7,6 +7,9 @@ using CommonCount.Application.Auth;
 using CommonCount.Infrastructure.Auth;
 using CommonCount.Infrastructure.Data;
 using CommonCount.Api.Auth;
+using CommonCount.Api.Groups;
+using CommonCount.Application.Groups;
+using CommonCount.Infrastructure.Groups;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,10 +23,16 @@ builder.Services.AddValidation();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Auth Services
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasherService>();
 builder.Services.AddScoped<AuthService>();
+
+// Group Services
+builder.Services.AddScoped<IGroupRepository, GroupRepository>();
+builder.Services.AddScoped<GroupsService>();
+
 
 // JWT authentication setup
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -68,5 +77,6 @@ var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 db.Database.Migrate();
 
 app.MapAuthEndpoints();
+app.MapGroupsEndppoints();
 
 app.Run();
