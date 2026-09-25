@@ -3,15 +3,16 @@
 </div>
 
 <form [formGroup]="form" (ngSubmit)="submit()">
-  <label for="group-name">Group name</label>
-  <input id="group-name" type="text" formControlName="name" />
+  <mat-form-field appearance="outline" style="width: 100%;">
+    <mat-label>Group name</mat-label>
+    <input matInput id="group-name" type="text" formControlName="name" />
+    @if (form.get('name')?.invalid && form.get('name')?.touched) {
+      <mat-error>Group name is required.</mat-error>
+    }
+  </mat-form-field>
 
-  @if (form.get('name')?.invalid && form.get('name')?.touched) {
-    <div class="error">Group name is required.</div>
-  }
-
-  <div class="actions">
-    <button type="button" class="secondary" (click)="cancel()">Cancel</button>
-    <button type="submit" [disabled]="form.invalid">Create</button>
+  <div class="actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px;">
+    <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">Create</button>
   </div>
 </form>

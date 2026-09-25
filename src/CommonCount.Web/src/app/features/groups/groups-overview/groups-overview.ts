@@ -1,13 +1,14 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { GroupService, GroupSummary } from '../group.service';
 import { CreateGroupDialog } from '../create-group-dialog/create-group-dialog';
 
 @Component({
   selector: 'app-groups-overview',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CreateGroupDialog],
+  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, CreateGroupDialog],
   styleUrl: './groups-overview.css',
   templateUrl: './groups-overview.html',
 })

@@ -5,7 +5,7 @@
       <h1>My groups</h1>
     </div>
 
-    <button type="button" class="primary-button" (click)="openCreateGroupDialog()">
+    <button mat-flat-button color="primary" type="button" (click)="openCreateGroupDialog()">
       + New group
     </button>
   </header>
@@ -15,7 +15,7 @@
   } @else if (groups().length === 0) {
     <div class="empty-state">
       <p>{{ emptyMessage() }}</p>
-      <button type="button" class="primary-button" (click)="openCreateGroupDialog()">
+      <button mat-flat-button color="primary" type="button" (click)="openCreateGroupDialog()">
         Create your first group
       </button>
     </div>
@@ -28,7 +28,7 @@
             <p>Invite code: <strong>{{ group.inviteCode }}</strong></p>
           </div>
 
-          <button type="button" class="secondary-button">Open</button>
+          <button mat-stroked-button type="button">Open</button>
         </article>
       }
     </div>
