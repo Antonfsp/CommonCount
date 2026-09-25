@@ -14,13 +14,32 @@ public class GroupsService
         _groupRepository = groupRepository;
     }
 
-    public async Task<Result<Group>> CreateGroupAsync(CreateGroupRequest request)
+    public async Task<List<Group>> GetGroupsForUserAsync(int userId)
     {
+        return await _groupRepository.GetGroupsByUserIdAsync(userId);
+    }
+
+    public async Task<Result<Group>> CreateGroupAsync(CreateGroupRequest request, int userId)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            return Result<Group>.Fail("Group name is required.");
+        }
+
         var group = new Group
         {
-            Name = request.Name,
+            Name = request.Name.Trim(),
             InviteCode = await GenerateUniqueInviteCodeAsync()
         };
+
+        var groupMember = new GroupMember
+        {
+            DisplayName = "Owner",
+            UserId = userId,
+            Group = group
+        };
+
+        group.Members.Add(groupMember);
 
         await _groupRepository.AddAsync(group);
 
@@ -42,6 +61,6 @@ public class GroupsService
     {
         var random = Random.Shared;
         return new string(Enumerable.Repeat(chars, count)
-    .Select(s => s[random.Next(s.Length)]).ToArray());
+            .Select(s => s[random.Next(s.Length)]).ToArray());
     }
 }

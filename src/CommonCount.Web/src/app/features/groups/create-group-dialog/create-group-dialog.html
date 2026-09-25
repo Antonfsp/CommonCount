@@ -1,0 +1,17 @@
+<div class="dialog-header">
+  <h2>Create a group</h2>
+</div>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <label for="group-name">Group name</label>
+  <input id="group-name" type="text" formControlName="name" />
+
+  @if (form.get('name')?.invalid && form.get('name')?.touched) {
+    <div class="error">Group name is required.</div>
+  }
+
+  <div class="actions">
+    <button type="button" class="secondary" (click)="cancel()">Cancel</button>
+    <button type="submit" [disabled]="form.invalid">Create</button>
+  </div>
+</form>

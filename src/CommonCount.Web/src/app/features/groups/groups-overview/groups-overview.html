@@ -1,0 +1,52 @@
+<section class="groups-page">
+  <header class="toolbar">
+    <div>
+      <p class="eyebrow">Overview</p>
+      <h1>My groups</h1>
+    </div>
+
+    <button type="button" class="primary-button" (click)="openCreateGroupDialog()">
+      + New group
+    </button>
+  </header>
+
+  @if (isLoading()) {
+    <p>Loading groups...</p>
+  } @else if (groups().length === 0) {
+    <div class="empty-state">
+      <p>{{ emptyMessage() }}</p>
+      <button type="button" class="primary-button" (click)="openCreateGroupDialog()">
+        Create your first group
+      </button>
+    </div>
+  } @else {
+    <div class="group-list">
+      @for (group of groups(); track group.id) {
+        <article class="group-card">
+          <div>
+            <h2>{{ group.name }}</h2>
+            <p>Invite code: <strong>{{ group.inviteCode }}</strong></p>
+          </div>
+
+          <button type="button" class="secondary-button">Open</button>
+        </article>
+      }
+    </div>
+  }
+</section>
+
+@if (showCreateDialog()) {
+  <div class="modal-backdrop" (click)="closeCreateGroupDialog()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <app-create-group-dialog
+        [initialName]="''"
+        (closed)="onDialogClosed($event)"
+      ></app-create-group-dialog>
+    </div>
+  </div>
+}
+
+<script>
+  // no-op placeholder to avoid template residuals
+</script>
+

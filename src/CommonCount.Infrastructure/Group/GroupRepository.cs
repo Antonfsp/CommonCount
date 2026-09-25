@@ -21,7 +21,9 @@ public class GroupRepository : IGroupRepository
 
     public async Task<List<Group>> GetGroupsByUserIdAsync(int userId)
         => await _db.Groups
-        .Where(g => g.Members.Any(u => u.Id == userId)).ToListAsync();
+        .Where(g => g.Members.Any(m => m.UserId == userId))
+        .OrderByDescending(g => g.CreatedAt)
+        .ToListAsync();
 
     public async Task<bool> InviteCodeExistsAsync(string inviteCode)
     => await _db.Groups.AnyAsync(g => g.InviteCode == inviteCode);
