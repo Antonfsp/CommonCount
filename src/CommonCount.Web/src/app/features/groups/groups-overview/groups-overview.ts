@@ -1,30 +1,36 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+
 import { GroupService, GroupSummary } from '../group.service';
 import { CreateGroupDialog } from '../create-group-dialog/create-group-dialog';
+
+
+
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-groups-overview',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CreateGroupDialog],
+  imports: [
+    CommonModule,
+    MatButtonModule,
+    MatToolbarModule,
+    MatIconModule,
+    MatCardModule,
+  ],
   styleUrl: './groups-overview.css',
   templateUrl: './groups-overview.html',
 })
 export class GroupsOverview {
   private readonly groupService = inject(GroupService);
-  private readonly fb = inject(FormBuilder);
+  private readonly dialog = inject(MatDialog);
 
   readonly groups = signal<GroupSummary[]>([]);
   readonly isLoading = signal(false);
-  readonly showCreateDialog = signal(false);
-  readonly emptyMessage = computed(() =>
-    this.groups().length === 0 ? 'You are not part of any group yet.' : ''
-  );
-
-  readonly groupForm = this.fb.group({
-    name: ['', [Validators.required, Validators.minLength(2)]],
-  });
 
   constructor() {
     this.loadGroups();
@@ -44,23 +50,19 @@ export class GroupsOverview {
   }
 
   openCreateGroupDialog(): void {
-    this.showCreateDialog.set(true);
-    this.groupForm.reset();
+    const dialogRef = this.dialog.open(CreateGroupDialog, {
+    });
+
+    dialogRef.afterClosed().subscribe((groupName : string | null) => this.onDialogClosed(groupName));
   }
 
-  closeCreateGroupDialog(): void {
-    this.showCreateDialog.set(false);
-    this.groupForm.reset();
-  }
+  onDialogClosed(groupName: string | null): void {
 
-  onDialogClosed(value: string | null): void {
-    this.closeCreateGroupDialog();
-
-    if (!value || !value.trim()) {
+    if (!groupName) {
       return;
     }
 
-    this.groupService.createGroup(value.trim()).subscribe({
+    this.groupService.createGroup(groupName).subscribe({
       next: () => this.loadGroups(),
       error: () => console.error('Failed to create group'),
     });

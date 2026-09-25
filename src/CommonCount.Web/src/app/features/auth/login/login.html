@@ -4,36 +4,38 @@
   <h2>Connexion</h2>
 
   <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-    <div class="form-field">
-      <label for="email">Email</label>
-      <input id="email" type="email" formControlName="email" />
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Email</mat-label>
+      <input matInput id="email" type="email" formControlName="email" />
       @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
-        <span class="error">Email invalide.</span>
+        <mat-error>Email invalide.</mat-error>
       }
-    </div>
+    </mat-form-field>
 
-    <div class="form-field">
-      <label for="password">Mot de passe</label>
-      <input id="password" type="password" formControlName="password" />
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Mot de passe</mat-label>
+      <input matInput id="password" type="password" formControlName="password" />
       @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
-        <span class="error">Mot de passe requis.</span>
+        <mat-error>Mot de passe requis.</mat-error>
       }
-    </div>
+    </mat-form-field>
 
     @if (errorMessage()) {
       <div class="error-banner">{{ errorMessage() }}</div>
     }
 
-    <button type="submit" [disabled]="loginForm.invalid || isLoading()">
-      @if (isLoading()) {
-        Logging in...
-      } @else {
-        Log in
-      }
-    </button>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px;">
+      <button mat-flat-button color="primary" type="submit" [disabled]="loginForm.invalid || isLoading()">
+        @if (isLoading()) {
+          Logging in...
+        } @else {
+          Log in
+        }
+      </button>
 
-    <button type="button" (click)="goToRegister()" [disabled]="isLoading()">
-      Or Sign up
-    </button>
+      <button mat-stroked-button type="button" (click)="goToRegister()" [disabled]="isLoading()">
+        Or Sign up
+      </button>
+    </div>
   </form>
 </div>
