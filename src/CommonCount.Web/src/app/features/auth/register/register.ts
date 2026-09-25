@@ -4,50 +4,47 @@ import { Router } from '@angular/router';
 import { Auth } from '../../../core/services/auth';
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-register',
   standalone: true,
   imports: [ReactiveFormsModule],
-  templateUrl: './login.html',
-  styleUrl: './login.css',
+  templateUrl: './register.html',
+  styleUrl: './register.css',
 })
-export class Login {
+export class Register {
   private readonly formBuilder = inject(FormBuilder);
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
 
-  protected readonly title = signal('CommonCount.Web');
-
   errorMessage = signal<string | null>(null);
   isLoading = signal(false);
 
-  loginForm = this.formBuilder.group({
+  registerForm = this.formBuilder.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
+    displayName: ['', [Validators.required]],
   });
 
   onSubmit(): void {
-    if (this.loginForm.invalid) {
+    if (this.registerForm.invalid) {
       return;
     }
 
     this.errorMessage.set(null);
     this.isLoading.set(true);
 
-    const { email, password } = this.loginForm.value;
+    const { email, password, displayName } = this.registerForm.value;
 
-    this.auth.login({ email: email!, password: password! }).subscribe({
-      next: () => {
-        this.isLoading.set(false);
-        this.router.navigate(['/groups']);
-      },
-      error: () => {
-        this.isLoading.set(false);
-        this.errorMessage.set('Incorrect email or password. Please try again.');
-      },
-    });
-  }
-
-  goToRegister() {
-    this.router.navigate(['/register']);
+    this.auth
+      .register({ email: email!, password: password!, displayName: displayName! })
+      .subscribe({
+        next: () => {
+          this.isLoading.set(false);
+          this.router.navigate(['/login']);
+        },
+        error: () => {
+          this.isLoading.set(false);
+          this.errorMessage.set('Error occurred while registering. Please try again.');
+        },
+      });
   }
 }
