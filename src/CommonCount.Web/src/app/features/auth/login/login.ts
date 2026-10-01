@@ -1,56 +1,30 @@
-import { Component, inject, signal } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { Auth } from '../../../core/services/auth';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { LoginDialog } from './login-dialog/login-dialog';
+import { RegisterDialog } from './register-dialog/register-dialog';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [MatButtonModule, MatDialogModule, MatIconModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
 export class Login {
-  private readonly formBuilder = inject(FormBuilder);
-  private readonly auth = inject(Auth);
-  private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
 
-  protected readonly title = signal('CommonCount.Web');
-
-  errorMessage = signal<string | null>(null);
-  isLoading = signal(false);
-
-  loginForm = this.formBuilder.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required]],
-  });
-
-  onSubmit(): void {
-    if (this.loginForm.invalid) {
-      return;
-    }
-
-    this.errorMessage.set(null);
-    this.isLoading.set(true);
-
-    const { email, password } = this.loginForm.value;
-
-    this.auth.login({ email: email!, password: password! }).subscribe({
-      next: () => {
-        this.isLoading.set(false);
-        this.router.navigate(['/groups']);
-      },
-      error: () => {
-        this.isLoading.set(false);
-        this.errorMessage.set('Incorrect email or password. Please try again.');
-      },
-    });
+  openLoginDialog(): void {
+    this.dialog.open(LoginDialog, this.dialogConfig);
   }
 
-  goToRegister() {
-    this.router.navigate(['/register']);
+  openRegisterDialog(): void {
+    this.dialog.open(RegisterDialog, this.dialogConfig);
   }
+
+  private readonly dialogConfig = {
+    width: '440px',
+    maxWidth: 'calc(100vw - 32px)',
+  };
 }

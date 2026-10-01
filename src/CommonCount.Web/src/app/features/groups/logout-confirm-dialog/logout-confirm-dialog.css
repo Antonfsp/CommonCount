@@ -1,0 +1,7 @@
+p {
+  margin: 0;
+}
+
+mat-dialog-actions {
+  gap: 8px;
+}

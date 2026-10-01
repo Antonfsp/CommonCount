@@ -1,41 +1,20 @@
-<div class="login-container">
-  <h1>{{ title() }}</h1>
+<main class="login-page">
+  <div class="login-container">
+    <header class="page-header">
+      <p class="brand-label">COMMONCOUNT</p>
+      <h1>Shared costs, clearly counted.</h1>
+      <p class="page-description">Bring your group expenses together and see who owes what.</p>
+    </header>
 
-  <h2>Connexion</h2>
-
-  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-    <mat-form-field appearance="outline" style="width: 100%;">
-      <mat-label>Email</mat-label>
-      <input matInput id="email" type="email" formControlName="email" />
-      @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
-        <mat-error>Email invalide.</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" style="width: 100%;">
-      <mat-label>Mot de passe</mat-label>
-      <input matInput id="password" type="password" formControlName="password" />
-      @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
-        <mat-error>Mot de passe requis.</mat-error>
-      }
-    </mat-form-field>
-
-    @if (errorMessage()) {
-      <div class="error-banner">{{ errorMessage() }}</div>
-    }
-
-    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px;">
-      <button mat-flat-button color="primary" type="submit" [disabled]="loginForm.invalid || isLoading()">
-        @if (isLoading()) {
-          Logging in...
-        } @else {
-          Log in
-        }
+    <nav class="login-actions" aria-label="Account actions">
+      <button mat-flat-button color="primary" type="button" (click)="openLoginDialog()">
+        <mat-icon>login</mat-icon>
+        Log in
       </button>
-
-      <button mat-stroked-button type="button" (click)="goToRegister()" [disabled]="isLoading()">
-        Or Sign up
+      <button mat-stroked-button type="button" (click)="openRegisterDialog()">
+        <mat-icon>person_add</mat-icon>
+        Sign up
       </button>
-    </div>
-  </form>
-</div>
+    </nav>
+  </div>
+</main>

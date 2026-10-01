@@ -1,0 +1,36 @@
+<form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+	<h2 mat-dialog-title>Log in</h2>
+
+	<mat-dialog-content class="auth-dialog-content">
+		<mat-form-field appearance="outline" floatLabel="always">
+			<mat-label>Email</mat-label>
+			<input matInput id="login-email" type="email" formControlName="email" />
+			@if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
+				<mat-error>Enter a valid email address.</mat-error>
+			}
+		</mat-form-field>
+
+		<mat-form-field appearance="outline" floatLabel="always">
+			<mat-label>Password</mat-label>
+			<input matInput id="login-password" type="password" formControlName="password" />
+			@if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+				<mat-error>Password is required.</mat-error>
+			}
+		</mat-form-field>
+
+		@if (errorMessage()) {
+			<div class="error-banner" role="alert">{{ errorMessage() }}</div>
+		}
+	</mat-dialog-content>
+
+	<mat-dialog-actions align="end">
+		<button mat-button type="button" (click)="cancel()" [disabled]="isLoading()">Cancel</button>
+		<button mat-flat-button color="primary" type="submit" [disabled]="loginForm.invalid || isLoading()">
+			@if (isLoading()) {
+				Signing in...
+			} @else {
+				Log in
+			}
+		</button>
+	</mat-dialog-actions>
+</form>

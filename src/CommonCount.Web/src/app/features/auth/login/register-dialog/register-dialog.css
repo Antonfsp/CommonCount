@@ -1,0 +1,25 @@
+.auth-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: min(340px, 72vw);
+}
+
+.auth-dialog-content mat-form-field:first-child {
+  margin-top: 8px;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+mat-dialog-actions {
+  gap: 8px;
+}
+
+.error-banner {
+  border-radius: 4px;
+  padding: 12px;
+  color: var(--mat-sys-on-error-container);
+  background-color: var(--mat-sys-error-container);
+}
