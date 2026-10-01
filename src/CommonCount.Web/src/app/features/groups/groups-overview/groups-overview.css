@@ -14,8 +14,20 @@
 }
 
 .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   border-radius: 8px;
   color: var(--mat-sys-primary);
+}
+
+.page-header h1 {
+  margin: 0;
+}
+
+.page-header button mat-icon {
+  margin-right: 6px;
 }
 
 .group-grid {
@@ -50,4 +62,11 @@
   font-size: 40px;
   width: 40px;
   height: 40px;
+}
+
+@media (max-width: 420px) {
+  .page-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }

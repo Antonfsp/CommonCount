@@ -1,0 +1,61 @@
+<form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+  <h2 mat-dialog-title>Create your account</h2>
+
+  <mat-dialog-content class="auth-dialog-content">
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label>Name</mat-label>
+      <input
+        matInput
+        id="register-name"
+        type="text"
+        formControlName="displayName"
+        autocomplete="name"
+      />
+      <mat-error>Name is required.</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label>Email</mat-label>
+      <input
+        matInput
+        id="register-email"
+        type="email"
+        formControlName="email"
+        autocomplete="email"
+      />
+      <mat-error>Enter a valid email address.</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label>Password</mat-label>
+      <input
+        matInput
+        id="register-password"
+        type="password"
+        formControlName="password"
+        autocomplete="new-password"
+      />
+      <mat-error>Password must be at least two characters long.</mat-error>
+    </mat-form-field>
+
+    @if (errorMessage()) {
+      <div class="error-banner" role="alert">{{ errorMessage() }}</div>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancel()" [disabled]="isLoading()">Cancel</button>
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      [disabled]="registerForm.invalid || isLoading()"
+    >
+      @if (isLoading()) {
+        Creating account...
+      } @else {
+        Create account
+      }
+    </button>
+  </mat-dialog-actions>
+</form>
