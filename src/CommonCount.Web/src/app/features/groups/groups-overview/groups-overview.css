@@ -1,0 +1,53 @@
+.groups-page {
+  min-height: 100vh;
+  padding: 32px 16px;
+}
+
+.groups-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.page-header {
+  border-radius: 8px;
+  color: var(--mat-sys-primary);
+}
+
+.group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.create-group-card {
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.group-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--mat-sys-level2);
+}
+
+.create-group-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--mat-sys-primary);
+}
+
+.create-group-card mat-icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+}

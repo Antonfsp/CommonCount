@@ -3,34 +3,39 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-create-group-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatDialogModule
+  ],
   templateUrl: './create-group-dialog.html',
   styleUrl: './create-group-dialog.css',
 })
+
 export class CreateGroupDialog {
-  private readonly fb = inject(FormBuilder);
-  readonly initialName = input('');
-  readonly closed = output<string | null>();
+  readonly dialogRef = inject(MatDialogRef<CreateGroupDialog>);
+    private readonly fb = inject(FormBuilder);
 
-  form = this.fb.group({
-    name: [this.initialName(), [Validators.required, Validators.minLength(2)]],
-  });
+    readonly form = this.fb.group({
+        name: ['', [Validators.required, Validators.minLength(2)]],
+    });
 
-  submit(): void {
+  create(): void {
     if (this.form.invalid) {
-      this.form.markAllAsTouched();
       return;
     }
 
-    const value = this.form.value.name?.trim() ?? null;
-    this.closed.emit(value);
+    this.dialogRef.close(this.form.value.name);
   }
 
   cancel(): void {
-    this.closed.emit(null);
+    this.dialogRef.close(null);
   }
 }
