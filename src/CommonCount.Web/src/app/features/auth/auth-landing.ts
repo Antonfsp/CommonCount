@@ -6,13 +6,13 @@ import { LoginDialog } from './login-dialog/login-dialog';
 import { RegisterDialog } from './register-dialog/register-dialog';
 
 @Component({
-  selector: 'app-main',
+  selector: 'app-auth-landing',
   standalone: true,
   imports: [MatButtonModule, MatDialogModule, MatIconModule],
-  templateUrl: './main.html',
-  styleUrl: './main.css',
+  templateUrl: './auth-landing.html',
+  styleUrl: './auth-landing.css',
 })
-export class Main {
+export class AuthLanding {
   private readonly dialog = inject(MatDialog);
 
   openLoginDialog(): void {

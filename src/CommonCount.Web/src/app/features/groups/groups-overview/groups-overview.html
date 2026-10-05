@@ -2,17 +2,13 @@
   <div class="groups-container">
     <header class="page-header">
       <h1>My groups</h1>
-      <button mat-stroked-button type="button" (click)="confirmLogout()">
-        <mat-icon>logout</mat-icon>
-        Log out
-      </button>
     </header>
 
     <div class="group-grid">
       @for (group of groups(); track group.id) {
         <mat-card
           class="group-card"
-          click="openGroup(group)"
+          (click)="openGroup(group.id)"
           tabindex="0"
           role="button"
           aria-label="Open group {{ group.name }}"

@@ -1,0 +1,16 @@
+<mat-toolbar class="groups-toolbar">
+  <span class="toolbar-title"> COMMONCOUNT </span>
+
+  <span class="toolbar-spacer"></span>
+
+  <div class="toolbar-buttons">
+    <a mat-button routerLink="/groups"> My groups </a>
+
+    <button mat-stroked-button type="button" (click)="confirmLogout()">
+      <mat-icon>logout</mat-icon>
+      Log out
+    </button>
+  </div>
+</mat-toolbar>
+
+<router-outlet />
