@@ -36,18 +36,33 @@
   gap: 16px;
 }
 
-.create-group-card {
-  display: flex;
-  flex-direction: column;
-  align-items: left;
-  justify-content: center;
-  gap: 8px;
+.group-card {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background-color: var(--mat-sys-surface);
+  box-shadow: var(--mat-sys-level1);
   cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
 }
 
-.group-card:hover {
+.group-card:hover,
+.group-card:focus-visible {
   transform: translateY(-2px);
   box-shadow: var(--mat-sys-level2);
+  background-color: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
+}
+
+.group-card:focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .group-card {
+    transition: none;
+  }
 }
 
 .create-group-card {
@@ -56,6 +71,15 @@
   align-items: center;
   justify-content: center;
   color: var(--mat-sys-primary);
+}
+
+.create-group-card {
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
 }
 
 .create-group-card mat-icon {

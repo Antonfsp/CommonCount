@@ -1,1 +1,56 @@
-<p>group-detail works!</p>
+<section class="groups-page">
+  <mat-tab-group class="group-detail-tab-group" animationDuration="0">
+    <mat-tab label="Expenses">
+      <div class="tab-content">
+        <mat-list class="expense-list">
+          <mat-list-item class="expense-list-item">
+            <p>exemple</p>
+          </mat-list-item>
+          <mat-list-item class="expense-list-item">
+            <p>exemple</p>
+          </mat-list-item>
+          <mat-list-item class="expense-list-item">
+            <p>exemple</p>
+          </mat-list-item>
+          <mat-list-item class="expense-list-item">
+            <p>exemple</p>
+          </mat-list-item>
+          <mat-list-item class="expense-list-item">
+            <p>exemple</p>
+          </mat-list-item>
+          <mat-list-item class="expense-list-item">
+            <p>exemple</p>
+          </mat-list-item>
+          <mat-list-item class="expense-list-item">
+            <p>exemple</p>
+          </mat-list-item>
+          <mat-list-item class="expense-list-item">
+            <p>exemple</p>
+          </mat-list-item>
+           <mat-list-item class="expense-list-item">
+            <p>exemple</p>
+          </mat-list-item>
+          <mat-list-item class="expense-list-item">
+            <p>exemple</p>
+          </mat-list-item>
+          <mat-list-item class="expense-list-item">
+            <p>exemple</p>
+          </mat-list-item>
+        </mat-list>
+      </div>
+    </mat-tab>
+    <mat-tab label="Sharing"> Content 2 </mat-tab>
+  </mat-tab-group>
+
+  <button
+    mat-fab
+    extended
+    class="add-expense-button"
+    (click)="openCreateExpenseDialog()"
+    type="button"
+    aria-label="Add expense"
+  >
+    <mat-icon>add</mat-icon>
+    Add Expense
+  </button>
+</section>

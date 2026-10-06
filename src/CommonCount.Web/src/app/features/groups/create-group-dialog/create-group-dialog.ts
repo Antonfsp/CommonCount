@@ -13,19 +13,18 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatDialogModule
+    MatDialogModule,
   ],
   templateUrl: './create-group-dialog.html',
   styleUrl: './create-group-dialog.css',
 })
-
 export class CreateGroupDialog {
   readonly dialogRef = inject(MatDialogRef<CreateGroupDialog>);
-    private readonly fb = inject(FormBuilder);
+  private readonly fb = inject(FormBuilder);
 
-    readonly form = this.fb.group({
-        name: ['', [Validators.required, Validators.minLength(2)]],
-    });
+  readonly form = this.fb.group({
+    name: ['', [Validators.required, Validators.minLength(2)]],
+  });
 
   create(): void {
     if (this.form.invalid) {

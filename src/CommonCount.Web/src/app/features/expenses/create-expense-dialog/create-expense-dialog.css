@@ -1,0 +1,71 @@
+.expense-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: min(340px, 72vw);
+}
+
+.expense-dialog-content mat-form-field {
+  width: 100%;
+}
+
+.expense-dialog-content mat-form-field:first-child {
+  margin-top: 8px;
+}
+
+.participants-field {
+  border-radius: 6px;
+}
+
+.participants-field legend {
+  color: var(--mat-sys-on-primary-container);
+  font-size: 1rem;
+}
+
+.field-hint {
+  margin: 4px 0 12px;
+  font: var(--mat-sys-body-small);
+}
+
+.participants-selection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.participants-selection-list mat-list-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  padding: 0 12px;
+  cursor: pointer;
+  background: var(--mat-sys-surface);
+}
+
+.participants-selection-list mat-list-option input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--mat-sys-primary);
+}
+
+.participants-selection-list mat-list-option:hover {
+  background: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
+}
+
+.participants-selection-list mat-list-option:focus-visible {
+  background: transparent;
+}
+
+mat-dialog-actions {
+  gap: 8px;
+}
+
+@media (max-width: 420px) {
+  .expense-dialog-content {
+    min-width: 0;
+  }
+}

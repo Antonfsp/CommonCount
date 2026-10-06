@@ -1,0 +1,58 @@
+.group-detail-tab-group {
+  margin-top: 20px;
+  margin-left: 50px;
+  margin-right: 50px;
+  padding-bottom: 88px;
+}
+
+.add-expense-button {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 2;
+}
+
+.tab-content {
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expense-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 480px;
+  padding: 0;
+  margin: 20px;
+}
+
+.expense-list-item {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background-color: var(--mat-sys-surface);
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.expense-list-item:hover,
+.expense-list-item:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--mat-sys-level2);
+  background-color: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
+}
+
+.expense-list-item:focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .expense-list-item {
+    transition: none;
+  }
+}

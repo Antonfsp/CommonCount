@@ -1,0 +1,61 @@
+<form class="expense-form" (submit)="createExpense()">
+  <h2 mat-dialog-title>Create an expense</h2>
+
+  <mat-dialog-content class="expense-dialog-content">
+    <mat-form-field appearance="outline">
+      <mat-label>Expense name</mat-label>
+      <input
+        matInput
+        type="text"
+        [formField]="expenseForm.name"
+      />
+      <mat-error>{{ expenseForm.name().errors()[0]?.message }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Amount</mat-label>
+      <span matTextPrefix>€&nbsp;</span>
+      <input
+        matInput
+        type="number"
+        step="1.00"
+        [formField]="expenseForm.amount"
+      />
+      <mat-error>{{ expenseForm.amount().errors()[0]?.message }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Paid by</mat-label>
+      <mat-select
+        matNativeControl
+      >
+        <mat-option value="" selected disabled>Choose a group member</mat-option>
+        <mat-option value="1">Alex Morgan</mat-option>
+        <mat-option value="2">Sam Rivera</mat-option>
+        <mat-option value="3">Jordan Lee</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <fieldset class="participants-field">
+      <legend>Who participated?</legend>
+      <p class="field-hint">Select the group members who shared this expense.</p>
+
+      <mat-selection-list class="participants-selection-list">
+          <mat-list-option>
+            Alex Morgan
+          </mat-list-option>
+          <mat-list-option>
+            Sam Rivera
+          </mat-list-option>
+          <mat-list-option>
+            Jordan Lee
+          </mat-list-option>
+      </mat-selection-list>
+    </fieldset>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button type="submit">Create expense</button>
+  </mat-dialog-actions>
+</form>
