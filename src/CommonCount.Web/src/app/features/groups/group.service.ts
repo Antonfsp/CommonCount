@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface GroupSummary {
@@ -10,6 +10,12 @@ export interface GroupSummary {
   createdAt: string;
 }
 
+export interface MemberSummary {
+  id: number;
+  userId: number | null;
+  name: string;
+  joinedAt: string;
+}
 export interface CreateGroupRequest {
   name: string;
 }
@@ -31,5 +37,21 @@ export class GroupService {
 
   createGroup(name: string): Observable<CreateGroupResponse> {
     return this.http.post<CreateGroupResponse>(`${this.apiUrl}/create`, { name });
+  }
+
+  addMemberToGroup(groupId: number | null, memberName: string): Observable<MemberSummary> {
+    if (groupId === null) {
+      return throwError(() => new Error('A group is required to add a member.'));
+    }
+    return this.http.post<MemberSummary>(`${this.apiUrl}/${groupId}/members`, {
+      displayName: memberName,
+    });
+  }
+
+  getGroupMembers(groupId: number | null): Observable<MemberSummary[]> {
+    if (groupId === null) {
+      return throwError(() => new Error('A group is required to load members.'));
+    }
+    return this.http.get<MemberSummary[]>(`${this.apiUrl}/${groupId}/members`);
   }
 }

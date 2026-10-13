@@ -5,6 +5,6 @@ namespace CommonCount.Application.Groups;
 public class AddMemberRequest
 {
     [Required]
-    [MinLength(1)]
+    [StringLength(80, MinimumLength = 1)]
     public string DisplayName { get; set; } = string.Empty;
 }

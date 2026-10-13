@@ -1,0 +1,62 @@
+<h2 mat-dialog-title>Group settings</h2>
+
+<form [formGroup]="form" (ngSubmit)="addMember()">
+  <mat-dialog-content class="group-settings-content">
+    <fieldset class="members-field">
+      <legend>Members</legend>
+
+      @if (data.message) {
+        <p role="alert">{{ data.message }}</p>
+      }
+
+      @if (data.members.length > 0 || pendingMembers().length > 0) {
+        <mat-list class="members-list" aria-label="Group members">
+          @for (member of data.members; track member.id) {
+            <mat-list-item class="member-row">
+              <span matListItemTitle>{{ member.name }}</span>
+            </mat-list-item>
+          }
+          @for (name of pendingMembers(); track $index) {
+            <mat-list-item class="member-row">
+              <span matListItemTitle>{{ name }}</span>
+              <span matListItemMeta>New</span>
+            </mat-list-item>
+          }
+        </mat-list>
+      } @else {
+        <p class="empty-members">No members in this group yet.</p>
+      }
+
+      <div class="member-entry">
+        <mat-form-field class="member-entry-field" appearance="outline">
+          <mat-label>New Member</mat-label>
+          <input
+            matInput
+            formControlName="name"
+            autocomplete="off"
+            maxlength="80"
+          />
+          @if (form.controls.name.hasError('duplicate')) {
+            <mat-error>A member with this name already exists.</mat-error>
+          }
+          <button
+            mat-mini-fab
+            matSuffix
+            class="member-entry-button"
+            type="button"
+            aria-label="Add member to pending list"
+            [disabled]="form.controls.name.invalid"
+            (click)="addMember()"
+          >
+            <mat-icon>person_add</mat-icon>
+          </button>
+        </mat-form-field>
+      </div>
+    </fieldset>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button type="button" (click)="finish()">Accept</button>
+  </mat-dialog-actions>
+</form>

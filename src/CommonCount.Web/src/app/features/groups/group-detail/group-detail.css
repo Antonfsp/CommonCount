@@ -12,6 +12,13 @@
   z-index: 2;
 }
 
+.settings-button {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 2;
+}
+
 .tab-content {
   min-height: 320px;
   display: flex;

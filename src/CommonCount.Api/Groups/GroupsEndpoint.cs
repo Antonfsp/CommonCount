@@ -52,5 +52,62 @@ public static class GroupsEndpoint
 
             return Results.Created($"/api/groups/{result.Value!.Id}", response);
         }).WithName("Create group");
+
+        groupGroup.MapGet("/{groupId:int}/members", async (
+            int groupId,
+            ClaimsPrincipal user,
+            GroupsService groupsService) =>
+        {
+            var userIdClaim = user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var members = await groupsService.GetGroupMembersForUserAsync(groupId, userId);
+            if (members is null)
+            {
+                return Results.NotFound();
+            }
+
+            return Results.Ok(members.Select(ToMemberResponse));
+        }).WithName("Get group members");
+
+        groupGroup.MapPost("/{groupId:int}/members", async (
+            int groupId,
+            AddMemberRequest request,
+            ClaimsPrincipal user,
+            GroupsService groupsService) =>
+        {
+            var userIdClaim = user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var result = await groupsService.AddGroupMemberAsync(groupId, userId, request);
+            if (result is null)
+            {
+                return Results.NotFound();
+            }
+
+            if (!result.IsSuccess)
+            {
+                return Results.Conflict(new { message = result.Error });
+            }
+
+            var member = result.Value!;
+            return Results.Created(
+                $"/api/groups/{groupId}/members/{member.Id}",
+                ToMemberResponse(member));
+        }).WithName("Add group member");
     }
+
+    private static object ToMemberResponse(CommonCount.Domain.Entities.GroupMember member) => new
+    {
+        id = member.Id,
+        userId = member.UserId,
+        name = member.DisplayName,
+        joinedAt = member.JoinedAt
+    };
 }

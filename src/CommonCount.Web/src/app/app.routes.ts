@@ -12,7 +12,7 @@ export const routes: Routes = [
     component: GroupsLayout,
     children: [
       { path: '', component: GroupsOverview },
-      { path: ':id', component: GroupDetail },
+      { path: ':groupId', component: GroupDetail },
     ],
   },
 ];

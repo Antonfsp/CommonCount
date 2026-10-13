@@ -16,6 +16,13 @@ public class GroupRepository : IGroupRepository
     public async Task<Group?> GetByIdAsync(int groupId)
         => await _db.Groups.FindAsync(groupId);
 
+    public async Task<Group?> GetGroupWithMembersForUserAsync(int groupId, int userId)
+        => await _db.Groups
+            .Include(group => group.Members)
+            .FirstOrDefaultAsync(group =>
+                group.Id == groupId &&
+                group.Members.Any(member => member.UserId == userId));
+
     public async Task<Group?> GetByInviteCodeAsync(string inviteCode)
         => await _db.Groups.FirstOrDefaultAsync(g => g.InviteCode == inviteCode);
 

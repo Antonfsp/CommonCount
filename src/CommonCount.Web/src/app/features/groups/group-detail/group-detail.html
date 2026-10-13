@@ -42,6 +42,13 @@
     <mat-tab label="Sharing"> Content 2 </mat-tab>
   </mat-tab-group>
 
+  @if (memberLoadError()) {
+    <p role="alert">
+      {{ memberLoadError() }}
+      <button mat-button type="button" (click)="loadGroupMembers()">Retry</button>
+    </p>
+  }
+
   <button
     mat-fab
     extended
@@ -52,5 +59,15 @@
   >
     <mat-icon>add</mat-icon>
     Add Expense
+  </button>
+
+  <button
+  mat-fab
+  class="settings-button"
+  (click)="openGroupSettingsDialog()"
+  type="button"
+  aria-label="Group settings"
+  >
+    <mat-icon>settings</mat-icon>
   </button>
 </section>

@@ -19,6 +19,52 @@ public class GroupsService
         return await _groupRepository.GetGroupsByUserIdAsync(userId);
     }
 
+    public async Task<List<GroupMember>?> GetGroupMembersForUserAsync(int groupId, int userId)
+    {
+        var group = await _groupRepository.GetGroupWithMembersForUserAsync(groupId, userId);
+        return group?.Members.OrderBy(member => member.Id).ToList();
+    }
+
+    public async Task<Result<GroupMember>?> AddGroupMemberAsync(
+        int groupId,
+        int userId,
+        AddMemberRequest request)
+    {
+        var group = await _groupRepository.GetGroupWithMembersForUserAsync(groupId, userId);
+        if (group is null)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.DisplayName))
+        {
+            return Result<GroupMember>.Fail("Member name is required.");
+        }
+
+        var displayName = request.DisplayName.Trim();
+        if (displayName.Length > 80)
+        {
+            return Result<GroupMember>.Fail("Member name cannot exceed 80 characters.");
+        }
+
+        if (group.Members.Any(member =>
+                string.Equals(member.DisplayName.Trim(), displayName, StringComparison.OrdinalIgnoreCase)))
+        {
+            return Result<GroupMember>.Fail("A member with this name already exists in the group.");
+        }
+
+        var groupMember = new GroupMember
+        {
+            DisplayName = displayName,
+            Group = group
+        };
+
+        group.Members.Add(groupMember);
+        await _groupRepository.SaveChangesAsync();
+
+        return Result<GroupMember>.Ok(groupMember);
+    }
+
     public async Task<Result<Group>> CreateGroupAsync(CreateGroupRequest request, int userId)
     {
         if (string.IsNullOrWhiteSpace(request.Name))

@@ -4,7 +4,7 @@ public class GroupMember
 {
     public int Id { get; set; }
 
-    public string DisplayName { get; set; } = string.Empty; // Name of the user in the group
+    public string DisplayName { get; set; } = string.Empty; // Name shown in the group's roster
     public int? UserId { get; set; }
     public User? User { get; set; } = null!;
 
