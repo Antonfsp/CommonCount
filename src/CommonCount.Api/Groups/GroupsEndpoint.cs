@@ -53,6 +53,37 @@ public static class GroupsEndpoint
             return Results.Created($"/api/groups/{result.Value!.Id}", response);
         }).WithName("Create group");
 
+        groupGroup.MapGet("/{groupId:int}/expenses", async (
+            int groupId,
+            ClaimsPrincipal user,
+            GroupsService groupsService) =>
+        {
+            var userIdClaim = user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var expenses = await groupsService.GetExpensesForUserAsync(groupId, userId);
+            if (expenses is null)
+            {
+                return Results.NotFound();
+            }
+
+            return Results.Ok(expenses.Select(expense => new
+            {
+                id = expense.Id,
+                description = expense.Description,
+                amount = expense.Amount,
+                date = DateTime.SpecifyKind(expense.Date, DateTimeKind.Utc),
+                paidByMember = new
+                {
+                    id = expense.PaidByMember.Id,
+                    name = expense.PaidByMember.DisplayName
+                }
+            }));
+        }).WithName("Get group expenses");
+
         groupGroup.MapGet("/{groupId:int}/members", async (
             int groupId,
             ClaimsPrincipal user,

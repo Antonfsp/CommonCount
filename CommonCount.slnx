@@ -5,4 +5,7 @@
     <Project Path="src/CommonCount.Domain/CommonCount.Domain.csproj" />
     <Project Path="src/CommonCount.Infrastructure/CommonCount.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CommonCount.Api.IntegrationTests/CommonCount.Api.IntegrationTests.csproj" />
+  </Folder>
 </Solution>

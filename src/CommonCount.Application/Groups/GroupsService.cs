@@ -25,6 +25,11 @@ public class GroupsService
         return group?.Members.OrderBy(member => member.Id).ToList();
     }
 
+    public Task<List<Expense>?> GetExpensesForUserAsync(int groupId, int userId)
+    {
+        return _groupRepository.GetExpensesForUserAsync(groupId, userId);
+    }
+
     public async Task<Result<GroupMember>?> AddGroupMemberAsync(
         int groupId,
         int userId,

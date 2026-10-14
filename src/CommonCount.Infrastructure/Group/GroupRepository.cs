@@ -32,6 +32,20 @@ public class GroupRepository : IGroupRepository
         .OrderByDescending(g => g.CreatedAt)
         .ToListAsync();
 
+    public async Task<List<Expense>?> GetExpensesForUserAsync(int groupId, int userId)
+    {
+        var group = await _db.Groups
+            .Include(group => group.Expenses
+                .OrderByDescending(expense => expense.Date)
+                .ThenBy(expense => expense.Description))
+            .ThenInclude(expense => expense.PaidByMember)
+            .FirstOrDefaultAsync(group =>
+                group.Id == groupId &&
+                group.Members.Any(member => member.UserId == userId));
+
+        return group?.Expenses.ToList();
+    }
+
     public async Task<bool> InviteCodeExistsAsync(string inviteCode)
     => await _db.Groups.AnyAsync(g => g.InviteCode == inviteCode);
 

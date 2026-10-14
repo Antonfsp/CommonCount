@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ExpenseService } from '../../expenses/expense.service';
+import { ExpenseListItem, ExpenseService } from '../../expenses/expense.service';
 import { GroupService, MemberSummary } from '../group.service';
 import { GroupSettingsDialog } from '../group-settings-dialog/group-settings-dialog';
 import { GroupDetail } from './group-detail';
@@ -20,6 +20,19 @@ describe('GroupDetail', () => {
       of({ id: 2, userId: null, name, joinedAt: '2026-10-13T00:00:00Z' }),
     ),
   };
+  const expenses = {
+    getExpenses: vi.fn(() =>
+      of([
+        {
+          id: 7,
+          description: 'Dinner',
+          amount: 24.5,
+          date: '2026-10-14T08:30:00Z',
+          paidByMember: { id: 1, name: 'Owner' },
+        },
+      ]),
+    ),
+  };
   const dialogOpen = vi.fn(() => ({ afterClosed: () => of(null) }));
 
   beforeEach(async () => {
@@ -28,6 +41,18 @@ describe('GroupDetail', () => {
     groupService.addMemberToGroup.mockReset();
     groupService.addMemberToGroup.mockImplementation((_groupId, name) =>
       of({ id: 2, userId: null, name, joinedAt: '2026-10-13T00:00:00Z' }),
+    );
+    expenses.getExpenses.mockReset();
+    expenses.getExpenses.mockReturnValue(
+      of([
+        {
+          id: 7,
+          description: 'Dinner',
+          amount: 24.5,
+          date: '2026-10-14T08:30:00Z',
+          paidByMember: { id: 1, name: 'Owner' },
+        },
+      ]),
     );
     dialogOpen.mockReset();
     dialogOpen.mockReturnValue({ afterClosed: () => of(null) });
@@ -40,7 +65,7 @@ describe('GroupDetail', () => {
           useValue: { paramMap: of(convertToParamMap({ groupId: '1' })) },
         },
         { provide: GroupService, useValue: groupService },
-        { provide: ExpenseService, useValue: {} },
+        { provide: ExpenseService, useValue: expenses },
         { provide: MatDialog, useValue: { open: dialogOpen } },
       ],
     }).compileComponents();
@@ -57,6 +82,118 @@ describe('GroupDetail', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
     expect(groupService.getGroupMembers).toHaveBeenCalledWith(1);
+    expect(expenses.getExpenses).toHaveBeenCalledWith(1);
+  });
+
+  it('shows the group expenses returned by the backend', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.textContent).toContain('Dinner');
+    expect(fixture.nativeElement.textContent).toContain('24.50');
+    expect(fixture.nativeElement.textContent).toContain('Owner');
+    expect(fixture.nativeElement.textContent).not.toContain('exemple');
+  });
+
+  it('shows loading feedback on entry until the backend returns group expenses', async () => {
+    fixture.destroy();
+    const pendingExpenses = new Subject<ExpenseListItem[]>();
+    expenses.getExpenses.mockReset();
+    expenses.getExpenses.mockReturnValue(pendingExpenses);
+    fixture = TestBed.createComponent(GroupDetail);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent)
+      .toContain('Loading expenses');
+
+    pendingExpenses.next([
+      {
+        id: 8,
+        description: 'Groceries',
+        amount: 8,
+        date: '2026-10-14T08:00:00Z',
+        paidByMember: { id: 1, name: 'Owner' },
+      },
+    ]);
+    pendingExpenses.complete();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Groceries');
+  });
+
+  it('does not show results from an earlier group request', () => {
+    const earlierRequest = new Subject<ExpenseListItem[]>();
+    expenses.getExpenses.mockReturnValueOnce(earlierRequest).mockReturnValueOnce(
+      of([
+        {
+          id: 9,
+          description: 'Taxi',
+          amount: 15,
+          date: '2026-10-14T08:00:00Z',
+          paidByMember: { id: 1, name: 'Owner' },
+        },
+      ]),
+    );
+
+    component.loadExpenses();
+    component.groupId.set(2);
+    component.loadExpenses();
+    earlierRequest.next([
+      {
+        id: 8,
+        description: 'Old group expense',
+        amount: 8,
+        date: '2026-10-14T08:00:00Z',
+        paidByMember: { id: 1, name: 'Owner' },
+      },
+    ]);
+    earlierRequest.complete();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Taxi');
+    expect(fixture.nativeElement.textContent).not.toContain('Old group expense');
+    expect(expenses.getExpenses).toHaveBeenLastCalledWith(2);
+  });
+
+  it('distinguishes a group with no expenses from a loading failure', () => {
+    expenses.getExpenses.mockReturnValueOnce(of([]));
+
+    component.loadExpenses();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('No expenses yet.');
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('allows retrying after group expenses fail to load', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    expenses.getExpenses.mockReturnValueOnce(
+      throwError(() => new Error('Request failed')),
+    );
+
+    component.loadExpenses();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Could not load expenses.');
+
+    expenses.getExpenses.mockReturnValueOnce(
+      of([
+        {
+          id: 8,
+          description: 'Groceries',
+          amount: 8,
+          date: '2026-10-14T08:00:00Z',
+          paidByMember: { id: 1, name: 'Owner' },
+        },
+      ]),
+    );
+    fixture.nativeElement.querySelector('button').click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Groceries');
+    expect(expenses.getExpenses).toHaveBeenLastCalledWith(1);
   });
 
   it('keeps successful additions and reopens settings with only failed names', () => {

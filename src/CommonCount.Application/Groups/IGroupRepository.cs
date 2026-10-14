@@ -8,6 +8,7 @@ public interface IGroupRepository
     Task<Group?> GetGroupWithMembersForUserAsync(int groupId, int userId);
     Task<Group?> GetByInviteCodeAsync(string inviteCode);
     Task<List<Group>> GetGroupsByUserIdAsync(int userId);
+    Task<List<Expense>?> GetExpensesForUserAsync(int groupId, int userId);
     Task<bool> InviteCodeExistsAsync(string inviteCode);
 
     Task AddAsync(Group group);

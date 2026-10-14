@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -6,15 +7,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatListModule } from '@angular/material/list';
 import { MatDialog } from '@angular/material/dialog';
-import { catchError, forkJoin, map, of } from 'rxjs';
+import { catchError, forkJoin, map, of, Subscription } from 'rxjs';
 
 import { CreateExpenseDialog } from '../../expenses/create-expense-dialog/create-expense-dialog';
-import { ExpenseService, ExpenseSummary } from '../../expenses/expense.service';
+import { ExpenseListItem, ExpenseService } from '../../expenses/expense.service';
 import { GroupService, MemberSummary } from '../group.service';
 import { GroupSettingsDialog } from '../group-settings-dialog/group-settings-dialog';
 
 @Component({
-  imports: [MatButtonModule, MatIconModule, MatTabsModule, MatListModule],
+  imports: [DecimalPipe, MatButtonModule, MatIconModule, MatTabsModule, MatListModule],
   selector: 'app-group-detail',
   styleUrl: './group-detail.css',
   templateUrl: './group-detail.html',
@@ -25,8 +26,11 @@ export class GroupDetail {
 
   private readonly expenseService = inject(ExpenseService);
   private readonly groupService = inject(GroupService);
+  private expenseLoadSubscription: Subscription | null = null;
 
-  readonly expenses = signal<ExpenseSummary[]>([]);
+  readonly expenses = signal<ExpenseListItem[]>([]);
+  readonly expenseLoadError = signal<string | null>(null);
+  readonly isLoadingExpenses = signal(false);
   readonly members = signal<MemberSummary[]>([]);
   readonly groupId = signal<number | null>(null);
   readonly memberLoadError = signal<string | null>(null);
@@ -40,23 +44,40 @@ export class GroupDetail {
       if (!Number.isSafeInteger(groupId) || groupId <= 0) {
         this.groupId.set(null);
         this.members.set([]);
+        this.loadExpenses();
         return;
       }
 
       this.groupId.set(groupId);
       this.loadGroupMembers();
+      this.loadExpenses();
     });
   }
 
   loadExpenses(): void {
-    this.isLoading.set(true);
-    this.expenseService.getExpenses().subscribe({
+    this.expenseLoadSubscription?.unsubscribe();
+    this.expenseLoadSubscription = null;
+
+    const groupId = this.groupId();
+    if (groupId === null) {
+      this.expenses.set([]);
+      this.expenseLoadError.set(null);
+      this.isLoadingExpenses.set(false);
+      return;
+    }
+
+    this.isLoadingExpenses.set(true);
+    this.expenses.set([]);
+    this.expenseLoadError.set(null);
+    this.expenseLoadSubscription = this.expenseService.getExpenses(groupId).subscribe({
       next: (expenses) => {
         this.expenses.set(expenses);
-        this.isLoading.set(false);
+        this.isLoadingExpenses.set(false);
       },
-      error: () => {
-        this.isLoading.set(false);
+      error: (error: unknown) => {
+        console.error('Failed to load group expenses.', error);
+        this.expenseLoadError.set('Could not load expenses. Try again.');
+        this.isLoadingExpenses.set(false);
       },
     });
   }

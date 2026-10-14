@@ -2,41 +2,27 @@
   <mat-tab-group class="group-detail-tab-group" animationDuration="0">
     <mat-tab label="Expenses">
       <div class="tab-content">
-        <mat-list class="expense-list">
-          <mat-list-item class="expense-list-item">
-            <p>exemple</p>
-          </mat-list-item>
-          <mat-list-item class="expense-list-item">
-            <p>exemple</p>
-          </mat-list-item>
-          <mat-list-item class="expense-list-item">
-            <p>exemple</p>
-          </mat-list-item>
-          <mat-list-item class="expense-list-item">
-            <p>exemple</p>
-          </mat-list-item>
-          <mat-list-item class="expense-list-item">
-            <p>exemple</p>
-          </mat-list-item>
-          <mat-list-item class="expense-list-item">
-            <p>exemple</p>
-          </mat-list-item>
-          <mat-list-item class="expense-list-item">
-            <p>exemple</p>
-          </mat-list-item>
-          <mat-list-item class="expense-list-item">
-            <p>exemple</p>
-          </mat-list-item>
-           <mat-list-item class="expense-list-item">
-            <p>exemple</p>
-          </mat-list-item>
-          <mat-list-item class="expense-list-item">
-            <p>exemple</p>
-          </mat-list-item>
-          <mat-list-item class="expense-list-item">
-            <p>exemple</p>
-          </mat-list-item>
-        </mat-list>
+        @if (isLoadingExpenses()) {
+          <p role="status">Loading expenses…</p>
+        } @else if (expenseLoadError()) {
+          <p role="alert">
+            {{ expenseLoadError() }}
+            <button mat-button type="button" (click)="loadExpenses()">Retry</button>
+          </p>
+        } @else if (expenses().length === 0) {
+          <p>No expenses yet.</p>
+        } @else {
+          <mat-list class="expense-list">
+            @for (expense of expenses(); track expense.id) {
+              <mat-list-item class="expense-list-item">
+                <span matListItemTitle>{{ expense.description }}</span>
+                <span matListItemLine>
+                  {{ expense.amount | number: '1.2-2' }} € · Paid by {{ expense.paidByMember.name }}
+                </span>
+              </mat-list-item>
+            }
+          </mat-list>
+        }
       </div>
     </mat-tab>
     <mat-tab label="Sharing"> Content 2 </mat-tab>

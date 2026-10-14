@@ -10,6 +10,17 @@ export interface ExpenseSummary {
   payedById: number;
 }
 
+export interface ExpenseListItem {
+  id: number;
+  description: string;
+  amount: number;
+  date: string;
+  paidByMember: {
+    id: number;
+    name: string;
+  };
+}
+
 export interface CreateExpenseRequest {
   name: string;
 }
@@ -24,8 +35,8 @@ export class ExpenseService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/expenses`;
 
-  getExpenses(): Observable<ExpenseSummary[]> {
-    return this.http.get<ExpenseSummary[]>(`${this.apiUrl}/`);
+  getExpenses(groupId: number): Observable<ExpenseListItem[]> {
+    return this.http.get<ExpenseListItem[]>(`${environment.apiUrl}/groups/${groupId}/expenses`);
   }
 
   createExpense(name: string): Observable<CreateExpenseRequest> {
