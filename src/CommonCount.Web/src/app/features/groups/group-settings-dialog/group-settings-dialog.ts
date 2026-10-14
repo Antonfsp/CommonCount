@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatListModule } from '@angular/material/list';
 
 import { MemberSummary } from '../group.service';
+import { Auth } from '../../../core/services/auth';
 
 interface GroupSettingsDialogData {
   members: MemberSummary[];
@@ -33,12 +34,15 @@ export class GroupSettingsDialog {
   readonly dialogRef = inject(MatDialogRef<GroupSettingsDialog>);
   readonly data = inject<GroupSettingsDialogData>(MAT_DIALOG_DATA);
   private readonly formBuilder = inject(FormBuilder);
+  readonly auth = inject(Auth);
 
   readonly pendingMembers = signal<string[]>(this.data.pendingMembers ?? []);
 
   readonly form = this.formBuilder.nonNullable.group({
     name: ['', [Validators.required, Validators.pattern(/\S/)]],
   });
+
+  readonly mySelf = signal<MemberSummary | undefined>(this.data.members.find((member) => member.userId?.toString() === this.auth.userId()));
 
   addMember(): void {
     if (this.form.invalid) {
@@ -47,8 +51,10 @@ export class GroupSettingsDialog {
     }
 
     const name = this.form.controls.name.value.trim();
-    const isDuplicate = [...this.data.members.map((member) => member.name), ...this.pendingMembers()]
-      .some((memberName) => memberName.trim().toLowerCase() === name.toLowerCase());
+    const isDuplicate = [
+      ...this.data.members.map((member) => member.name),
+      ...this.pendingMembers(),
+    ].some((memberName) => memberName.trim().toLowerCase() === name.toLowerCase());
 
     if (isDuplicate) {
       this.form.controls.name.setErrors({ duplicate: true });

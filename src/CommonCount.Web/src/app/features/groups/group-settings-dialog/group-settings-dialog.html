@@ -11,7 +11,13 @@
 
       @if (data.members.length > 0 || pendingMembers().length > 0) {
         <mat-list class="members-list" aria-label="Group members">
-          @for (member of data.members; track member.id) {
+          @if (this.mySelf()) {
+            <mat-list-item class="member-row">
+              <span matListItemTitle>{{ this.mySelf()?.name }}</span>
+              <span matListItemMeta>Myself</span>
+            </mat-list-item>
+          }
+          @for (member of data.members.filter((m) => m.userId?.toString() !== this.mySelf()?.userId?.toString()) ; track member.id) {
             <mat-list-item class="member-row">
               <span matListItemTitle>{{ member.name }}</span>
             </mat-list-item>

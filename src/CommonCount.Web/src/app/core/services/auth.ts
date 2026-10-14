@@ -13,8 +13,10 @@ export class Auth {
   private http = inject(HttpClient);
   private tokenStorage = inject(TokenStorage);
 
-  readonly isAuthenticated = computed(() => this.tokenStorage.isLoggedIn());
+  private readonly token = signal(this.tokenStorage.getToken());
+  readonly isAuthenticated = computed(() => !!this.token());
   readonly displayName = signal(this.tokenStorage.getDisplayName());
+  readonly userId = signal(this.tokenStorage.getUserId());
 
   register(request: RegisterRequest): Observable<RegisterResponse> {
     return this.http.post<RegisterResponse>(`${this.apiUrl}/register`, request);
@@ -25,14 +27,18 @@ export class Auth {
       tap((response) => {
         this.tokenStorage.setToken(response.token);
         this.tokenStorage.setDisplayName(response.displayName);
+        this.tokenStorage.setUserId(response.userId.toString());
+        this.token.set(response.token);
+        this.userId.set(response.userId.toString());
         this.displayName.set(response.displayName);
       })
     );
   }
 
   logout() {
-    this.tokenStorage.removeToken();
-    this.tokenStorage.removeDisplayName();
+    this.tokenStorage.clear();
+    this.token.set(null);
     this.displayName.set(null);
+    this.userId.set(null);
   }
 }

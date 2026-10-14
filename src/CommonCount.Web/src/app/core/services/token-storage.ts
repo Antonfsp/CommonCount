@@ -1,6 +1,7 @@
 import { Service } from '@angular/core';
 
 const TOKEN_KEY = 'auth_token';
+const USER_ID_KEY = 'user_id';
 const DISPLAY_NAME_KEY = 'display_name';
 
 @Service()
@@ -21,6 +22,14 @@ export class TokenStorage {
     return localStorage.getItem(DISPLAY_NAME_KEY);
   }
 
+  setUserId(userId: string) {
+    localStorage.setItem(USER_ID_KEY, userId);
+  }
+
+  getUserId(): string | null {
+    return localStorage.getItem(USER_ID_KEY);
+  }
+
   removeDisplayName() {
     localStorage.removeItem(DISPLAY_NAME_KEY);
   }
@@ -29,7 +38,13 @@ export class TokenStorage {
     localStorage.removeItem(TOKEN_KEY);
   }
 
-  isLoggedIn(): boolean {
-    return !!this.getToken();
+  removeUserId() {
+    localStorage.removeItem(USER_ID_KEY);
+  }
+
+  clear() {
+    this.removeToken();
+    this.removeDisplayName();
+    this.removeUserId();
   }
 }
