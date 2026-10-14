@@ -44,7 +44,8 @@ public static class AuthEndpoints
             {
                 token = result.Value.Token,
                 userId = result.Value.User.Id,
-                email = result.Value.User.Email
+                email = result.Value.User.Email,
+                displayName = result.Value.User.DisplayName
             });
         })
         .WithName("Login");

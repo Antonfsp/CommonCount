@@ -50,10 +50,11 @@ export class GroupsOverview {
 
   openCreateGroupDialog(): void {
     const dialogRef = this.dialog.open(CreateGroupDialog, {});
-
     dialogRef
       .afterClosed()
-      .subscribe((groupDetails: { name: string; memberName: string } | null) => this.onDialogClosed(groupDetails));
+      .subscribe((groupDetails: { name: string; memberName: string } | null) =>
+        this.onDialogClosed(groupDetails),
+      );
   }
 
   onDialogClosed(groupDetails: { name: string; memberName: string } | null): void {

@@ -1,4 +1,4 @@
-import { Service, inject, computed } from '@angular/core';
+import { Service, inject, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { RegisterRequest } from '../models/register-request';
@@ -14,6 +14,7 @@ export class Auth {
   private tokenStorage = inject(TokenStorage);
 
   readonly isAuthenticated = computed(() => this.tokenStorage.isLoggedIn());
+  readonly displayName = signal(this.tokenStorage.getDisplayName());
 
   register(request: RegisterRequest): Observable<RegisterResponse> {
     return this.http.post<RegisterResponse>(`${this.apiUrl}/register`, request);
@@ -23,11 +24,15 @@ export class Auth {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, request).pipe(
       tap((response) => {
         this.tokenStorage.setToken(response.token);
+        this.tokenStorage.setDisplayName(response.displayName);
+        this.displayName.set(response.displayName);
       })
     );
   }
 
   logout() {
     this.tokenStorage.removeToken();
+    this.tokenStorage.removeDisplayName();
+    this.displayName.set(null);
   }
 }
