@@ -31,7 +31,7 @@ export class RegisterDialog {
   readonly isLoading = signal(false);
 
   readonly registerForm = this.formBuilder.nonNullable.group({
-    displayName: ['', [Validators.required]],
+    displayName: ['', [Validators.required, Validators.pattern(/\S/)]],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(2)]],
   });

@@ -20,6 +20,11 @@ public class AuthService
 
     public async Task<Result<User>> RegisterAsync(RegisterRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.DisplayName))
+        {
+            return Result<User>.Fail("Profile name is required.");
+        }
+
         if (await _userRepository.EmailExistsAsync(request.Email))
         {
             return Result<User>.Fail("This email is already in use.");
@@ -28,7 +33,7 @@ public class AuthService
         var user = new User
         {
             Email = request.Email,
-            DisplayName = request.DisplayName
+            DisplayName = request.DisplayName.Trim()
         };
 
         user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
