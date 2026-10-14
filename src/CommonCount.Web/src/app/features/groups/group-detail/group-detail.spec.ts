@@ -1,9 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
-import { of, Subject, throwError } from 'rxjs';
+import { Observable, of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExpenseListItem, ExpenseService } from '../../expenses/expense.service';
+import { CreateExpenseDialog } from '../../expenses/create-expense-dialog/create-expense-dialog';
 import { GroupService, MemberSummary } from '../group.service';
 import { GroupSettingsDialog } from '../group-settings-dialog/group-settings-dialog';
 import { GroupDetail } from './group-detail';
@@ -32,8 +33,9 @@ describe('GroupDetail', () => {
         },
       ]),
     ),
+    createExpense: vi.fn(),
   };
-  const dialogOpen = vi.fn(() => ({ afterClosed: () => of(null) }));
+  const dialogOpen = vi.fn(() => ({ afterClosed: (): Observable<unknown> => of(null) }));
 
   beforeEach(async () => {
     groupService.getGroupMembers.mockReset();
@@ -105,8 +107,9 @@ describe('GroupDetail', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent)
-      .toContain('Loading expenses');
+    expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent).toContain(
+      'Loading expenses',
+    );
 
     pendingExpenses.next([
       {
@@ -169,9 +172,7 @@ describe('GroupDetail', () => {
 
   it('allows retrying after group expenses fail to load', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    expenses.getExpenses.mockReturnValueOnce(
-      throwError(() => new Error('Request failed')),
-    );
+    expenses.getExpenses.mockReturnValueOnce(throwError(() => new Error('Request failed')));
 
     component.loadExpenses();
     fixture.detectChanges();
@@ -194,6 +195,37 @@ describe('GroupDetail', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Groceries');
     expect(expenses.getExpenses).toHaveBeenLastCalledWith(1);
+  });
+
+  it('reports a confirmed save separately when refreshing the group list fails', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    dialogOpen.mockReturnValue({ afterClosed: () => of(true) });
+    expenses.getExpenses.mockReturnValueOnce(throwError(() => new Error('Request failed')));
+
+    component.openCreateExpenseDialog();
+    fixture.detectChanges();
+
+    expect(dialogOpen).toHaveBeenCalledWith(CreateExpenseDialog, { data: { groupId: 1 } });
+    expect(fixture.nativeElement.textContent).toContain(
+      'Expense saved, but the list could not be refreshed.',
+    );
+    expect(expenses.createExpense).not.toHaveBeenCalled();
+
+    expenses.getExpenses.mockReturnValueOnce(
+      of([
+        {
+          id: 8,
+          description: 'Dinner',
+          amount: 10,
+          date: '2026-10-14T08:30:00Z',
+          paidByMember: { id: 1, name: 'Owner' },
+        },
+      ]),
+    );
+    fixture.nativeElement.querySelector('[role="alert"] button').click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Dinner');
   });
 
   it('keeps successful additions and reopens settings with only failed names', () => {

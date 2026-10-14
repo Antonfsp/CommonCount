@@ -39,6 +39,8 @@ public class GroupRepository : IGroupRepository
                 .OrderByDescending(expense => expense.Date)
                 .ThenBy(expense => expense.Description))
             .ThenInclude(expense => expense.PaidByMember)
+            .Include(group => group.Expenses)
+            .ThenInclude(expense => expense.Participants)
             .FirstOrDefaultAsync(group =>
                 group.Id == groupId &&
                 group.Members.Any(member => member.UserId == userId));

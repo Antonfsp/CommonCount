@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -109,6 +110,134 @@ public sealed class GroupExpenseListingTests : IAsyncLifetime
         Assert.Empty(await response.Content.ReadFromJsonAsync<List<ExpenseResponse>>() ?? []);
     }
 
+    [Fact]
+    public async Task GroupMemberCanCreateExpenseWithEqualSharesAndRemainderCents()
+    {
+        using var request = AuthenticatedRequest(HttpMethod.Post, "/api/groups/1/expenses");
+        request.Content = JsonContent.Create(new
+        {
+            description = "Dinner",
+            amount = 10.01m,
+            paidByMemberId = 1,
+            participantMemberIds = new[] { 8, 6, 7 }
+        });
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var createdExpense = await response.Content.ReadFromJsonAsync<ExpenseResponse>();
+        Assert.NotNull(createdExpense);
+        Assert.Equal("Dinner", createdExpense.Description);
+        Assert.Equal(10.01m, createdExpense.Amount);
+        Assert.Equal("Owner", createdExpense.PaidByMember.Name);
+        Assert.InRange(createdExpense.Date, DateTime.UtcNow.AddMinutes(-1), DateTime.UtcNow.AddMinutes(1));
+
+        using var listRequest = AuthenticatedRequest(HttpMethod.Get, "/api/groups/1/expenses");
+        var listResponse = await _client.SendAsync(listRequest);
+        var expenses = await listResponse.Content.ReadFromJsonAsync<List<ExpenseResponse>>();
+
+        Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+        Assert.NotNull(expenses);
+        var savedExpense = Assert.Single(expenses, expense => expense.Description == "Dinner");
+        Assert.Equal(
+            new[] { (8, 3.34m), (6, 3.34m), (7, 3.33m) },
+            savedExpense.Participants.Select(participant => (participant.MemberId, participant.ShareAmount)));
+    }
+
+    [Fact]
+    public async Task ExpenseCreationRequiresAuthentication()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/groups/1/expenses")
+        {
+            Content = JsonContent.Create(ValidExpenseRequest())
+        };
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task NonMemberCannotCreateExpenseForAGroup()
+    {
+        using var request = AuthenticatedRequest(
+            HttpMethod.Post,
+            "/api/groups/1/expenses",
+            userId: 99);
+        request.Content = JsonContent.Create(ValidExpenseRequest());
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("-0.01")]
+    [InlineData("10.001")]
+    [InlineData("100000000.00")]
+    public async Task ExpenseAmountMustBePositiveAndHaveAtMostTwoDecimalPlaces(string amountText)
+    {
+        using var request = AuthenticatedRequest(HttpMethod.Post, "/api/groups/1/expenses");
+        request.Content = JsonContent.Create(new
+        {
+            description = "Invalid amount",
+            amount = decimal.Parse(amountText, CultureInfo.InvariantCulture),
+            paidByMemberId = 1,
+            participantMemberIds = new[] { 6 }
+        });
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(2, 6)]
+    [InlineData(1, 2)]
+    public async Task ExpensePayerAndParticipantsMustBelongToTheGroup(
+        int paidByMemberId,
+        int participantMemberId)
+    {
+        using var request = AuthenticatedRequest(HttpMethod.Post, "/api/groups/1/expenses");
+        request.Content = JsonContent.Create(new
+        {
+            description = "Dinner",
+            amount = 10m,
+            paidByMemberId,
+            participantMemberIds = new[] { participantMemberId }
+        });
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ExpenseRequiresAtLeastOneParticipant()
+    {
+        using var request = AuthenticatedRequest(HttpMethod.Post, "/api/groups/1/expenses");
+        request.Content = JsonContent.Create(new
+        {
+            description = "Dinner",
+            amount = 10m,
+            paidByMemberId = 1,
+            participantMemberIds = Array.Empty<int>()
+        });
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    private static object ValidExpenseRequest() => new
+    {
+        description = "Dinner",
+        amount = 10m,
+        paidByMemberId = 1,
+        participantMemberIds = new[] { 6 }
+    };
+
     private static HttpRequestMessage AuthenticatedRequest(
         HttpMethod method,
         string uri,
@@ -141,7 +270,10 @@ public sealed class GroupExpenseListingTests : IAsyncLifetime
                     DisplayName = "Owner",
                     UserId = GroupMemberUserId,
                     User = owner
-                }
+                },
+                new GroupMember { Id = 6, DisplayName = "Alex" },
+                new GroupMember { Id = 7, DisplayName = "Sam" },
+                new GroupMember { Id = 8, DisplayName = "Jordan" }
             ]
         };
         var otherGroup = new Group
@@ -210,12 +342,19 @@ public sealed class GroupExpenseListingTests : IAsyncLifetime
         public decimal Amount { get; init; }
         public DateTime Date { get; init; }
         public MemberResponse PaidByMember { get; init; } = new();
+        public List<ParticipantResponse> Participants { get; init; } = [];
     }
 
     private sealed class MemberResponse
     {
         public int Id { get; init; }
         public string Name { get; init; } = string.Empty;
+    }
+
+    private sealed class ParticipantResponse
+    {
+        public int MemberId { get; init; }
+        public decimal ShareAmount { get; init; }
     }
 
     private sealed class TestAuthenticationHandler(

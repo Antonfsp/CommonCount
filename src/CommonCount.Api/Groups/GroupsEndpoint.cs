@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using CommonCount.Application.Groups;
+using CommonCount.Domain.Entities;
 
 namespace CommonCount.Api.Groups;
 
@@ -70,19 +71,37 @@ public static class GroupsEndpoint
                 return Results.NotFound();
             }
 
-            return Results.Ok(expenses.Select(expense => new
-            {
-                id = expense.Id,
-                description = expense.Description,
-                amount = expense.Amount,
-                date = DateTime.SpecifyKind(expense.Date, DateTimeKind.Utc),
-                paidByMember = new
-                {
-                    id = expense.PaidByMember.Id,
-                    name = expense.PaidByMember.DisplayName
-                }
-            }));
+            return Results.Ok(expenses.Select(ToExpenseResponse));
         }).WithName("Get group expenses");
+
+        groupGroup.MapPost("/{groupId:int}/expenses", async (
+            int groupId,
+            CreateExpenseRequest request,
+            ClaimsPrincipal user,
+            GroupsService groupsService) =>
+        {
+            var userIdClaim = user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var result = await groupsService.CreateExpenseForUserAsync(groupId, userId, request);
+            if (result is null)
+            {
+                return Results.NotFound();
+            }
+
+            if (!result.IsSuccess)
+            {
+                return Results.BadRequest(new { message = result.Error });
+            }
+
+            var expense = result.Value!;
+            return Results.Created(
+                $"/api/groups/{groupId}/expenses/{expense.Id}",
+                ToExpenseResponse(expense));
+        }).WithName("Create group expense");
 
         groupGroup.MapGet("/{groupId:int}/members", async (
             int groupId,
@@ -140,5 +159,23 @@ public static class GroupsEndpoint
         userId = member.UserId,
         name = member.DisplayName,
         joinedAt = member.JoinedAt
+    };
+
+    private static object ToExpenseResponse(Expense expense) => new
+    {
+        id = expense.Id,
+        description = expense.Description,
+        amount = expense.Amount,
+        date = DateTime.SpecifyKind(expense.Date, DateTimeKind.Utc),
+        paidByMember = new
+        {
+            id = expense.PaidByMember.Id,
+            name = expense.PaidByMember.DisplayName
+        },
+        participants = expense.Participants.Select(participant => new
+        {
+            memberId = participant.MemberId,
+            shareAmount = participant.ShareAmount
+        })
     };
 }

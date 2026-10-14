@@ -31,6 +31,7 @@ export class GroupDetail {
   readonly expenses = signal<ExpenseListItem[]>([]);
   readonly expenseLoadError = signal<string | null>(null);
   readonly isLoadingExpenses = signal(false);
+  readonly hasUnrefreshedSavedExpense = signal(false);
   readonly members = signal<MemberSummary[]>([]);
   readonly groupId = signal<number | null>(null);
   readonly memberLoadError = signal<string | null>(null);
@@ -43,11 +44,15 @@ export class GroupDetail {
 
       if (!Number.isSafeInteger(groupId) || groupId <= 0) {
         this.groupId.set(null);
+        this.hasUnrefreshedSavedExpense.set(false);
         this.members.set([]);
         this.loadExpenses();
         return;
       }
 
+      if (this.groupId() !== groupId) {
+        this.hasUnrefreshedSavedExpense.set(false);
+      }
       this.groupId.set(groupId);
       this.loadGroupMembers();
       this.loadExpenses();
@@ -73,10 +78,15 @@ export class GroupDetail {
       next: (expenses) => {
         this.expenses.set(expenses);
         this.isLoadingExpenses.set(false);
+        this.hasUnrefreshedSavedExpense.set(false);
       },
       error: (error: unknown) => {
         console.error('Failed to load group expenses.', error);
-        this.expenseLoadError.set('Could not load expenses. Try again.');
+        this.expenseLoadError.set(
+          this.hasUnrefreshedSavedExpense()
+            ? 'Expense saved, but the list could not be refreshed. Retry to update it.'
+            : 'Could not load expenses. Try again.',
+        );
         this.isLoadingExpenses.set(false);
       },
     });
@@ -95,9 +105,7 @@ export class GroupDetail {
         this.memberLoadError.set(null);
         this.isLoading.set(false);
 
-        const existingNames = new Set(
-          members.map((member) => member.name.trim().toLowerCase()),
-        );
+        const existingNames = new Set(members.map((member) => member.name.trim().toLowerCase()));
         const namesToRetry = retryMemberNames.filter(
           (name) => !existingNames.has(name.trim().toLowerCase()),
         );
@@ -125,22 +133,25 @@ export class GroupDetail {
   }
 
   openCreateExpenseDialog(): void {
-    const dialogRef = this.dialog.open(CreateExpenseDialog, {});
-
-    dialogRef
-      .afterClosed()
-      .subscribe((expenseName: string | null) => this.onCreateExpenseDialogClosed(expenseName));
-  }
-
-  onCreateExpenseDialogClosed(expenseName: string | null): void {
-    if (!expenseName) {
+    const groupId = this.groupId();
+    if (groupId === null) {
       return;
     }
 
-    this.expenseService.createExpense(expenseName).subscribe({
-      next: () => this.loadExpenses(),
-      error: () => console.error('Failed to create expense'),
-    });
+    const dialogRef = this.dialog.open(CreateExpenseDialog, { data: { groupId } });
+
+    dialogRef
+      .afterClosed()
+      .subscribe((created: boolean | null) => this.onCreateExpenseDialogClosed(created));
+  }
+
+  onCreateExpenseDialogClosed(created: boolean | null): void {
+    if (!created) {
+      return;
+    }
+
+    this.hasUnrefreshedSavedExpense.set(true);
+    this.loadExpenses();
   }
 
   openGroupSettingsDialog(pendingMembers: string[] = [], message?: string): void {
@@ -178,9 +189,7 @@ export class GroupDetail {
     );
 
     forkJoin(additions).subscribe((results) => {
-      const failedNames = results
-        .filter((result) => !result.success)
-        .map((result) => result.name);
+      const failedNames = results.filter((result) => !result.success).map((result) => result.name);
       this.loadGroupMembers(failedNames);
     });
   }

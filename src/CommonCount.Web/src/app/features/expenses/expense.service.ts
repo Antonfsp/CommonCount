@@ -3,13 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-export interface ExpenseSummary {
-  id: number;
-  name: string;
-  amount: number;
-  payedById: number;
-}
-
 export interface ExpenseListItem {
   id: number;
   description: string;
@@ -22,24 +15,31 @@ export interface ExpenseListItem {
 }
 
 export interface CreateExpenseRequest {
-  name: string;
+  description: string;
+  amount: number;
+  paidByMemberId: number;
+  participantMemberIds: number[];
 }
 
 export interface CreateExpenseResponse {
   id: number;
-  name: string;
+  description: string;
+  amount: number;
+  date: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class ExpenseService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/expenses`;
 
   getExpenses(groupId: number): Observable<ExpenseListItem[]> {
     return this.http.get<ExpenseListItem[]>(`${environment.apiUrl}/groups/${groupId}/expenses`);
   }
 
-  createExpense(name: string): Observable<CreateExpenseRequest> {
-    return this.http.post<CreateExpenseResponse>(`${this.apiUrl}/create`, { name });
+  createExpense(groupId: number, request: CreateExpenseRequest): Observable<CreateExpenseResponse> {
+    return this.http.post<CreateExpenseResponse>(
+      `${environment.apiUrl}/groups/${groupId}/expenses`,
+      request,
+    );
   }
 }

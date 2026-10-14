@@ -33,7 +33,7 @@
   gap: 8px;
 }
 
-.participants-selection-list mat-list-option {
+.participants-selection-list label {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -45,18 +45,18 @@
   background: var(--mat-sys-surface);
 }
 
-.participants-selection-list mat-list-option input {
+.participants-selection-list input {
   width: 18px;
   height: 18px;
   margin: 0;
   accent-color: var(--mat-sys-primary);
 }
 
-.participants-selection-list mat-list-option:hover {
+.participants-selection-list label:hover {
   background: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
 }
 
-.participants-selection-list mat-list-option:focus-visible {
+.participants-selection-list label:focus-within {
   background: transparent;
 }
 

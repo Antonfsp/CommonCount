@@ -1,4 +1,5 @@
 using CommonCount.Application.Common;
+using CommonCount.Application.Groups;
 using CommonCount.Domain.Entities;
 
 namespace CommonCount.Application.Groups;
@@ -28,6 +29,73 @@ public class GroupsService
     public Task<List<Expense>?> GetExpensesForUserAsync(int groupId, int userId)
     {
         return _groupRepository.GetExpensesForUserAsync(groupId, userId);
+    }
+
+    public async Task<Result<Expense>?> CreateExpenseForUserAsync(
+        int groupId,
+        int userId,
+        CreateExpenseRequest request)
+    {
+        var group = await _groupRepository.GetGroupWithMembersForUserAsync(groupId, userId);
+        if (group is null)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Description))
+        {
+            return Result<Expense>.Fail("Expense description is required.");
+        }
+
+        if (request.Description.Trim().Length > 200)
+        {
+            return Result<Expense>.Fail("Expense description cannot exceed 200 characters.");
+        }
+
+        if (request.Amount <= 0 || request.Amount > 99_999_999.99m ||
+            decimal.Round(request.Amount, 2) != request.Amount)
+        {
+            return Result<Expense>.Fail("Expense amount must be positive and have no more than two decimal places.");
+        }
+
+        var participantMemberIds = request.ParticipantMemberIds;
+        if (participantMemberIds is null || participantMemberIds.Count == 0)
+        {
+            return Result<Expense>.Fail("Select at least one expense participant.");
+        }
+
+        if (participantMemberIds.Distinct().Count() != participantMemberIds.Count)
+        {
+            return Result<Expense>.Fail("An expense participant can only be selected once.");
+        }
+
+        var membersById = group.Members.ToDictionary(member => member.Id);
+        if (!membersById.TryGetValue(request.PaidByMemberId, out var paidByMember) ||
+            participantMemberIds.Any(memberId => !membersById.ContainsKey(memberId)))
+        {
+            return Result<Expense>.Fail("The payer and participants must be members of this group.");
+        }
+
+        var amountInCents = decimal.ToInt64(request.Amount * 100m);
+        var baseShareInCents = amountInCents / participantMemberIds.Count;
+        var remainderCents = amountInCents % participantMemberIds.Count;
+        var expense = new Expense
+        {
+            Description = request.Description.Trim(),
+            Amount = request.Amount,
+            Date = DateTime.UtcNow,
+            Group = group,
+            PaidByMember = paidByMember,
+            Participants = participantMemberIds.Select((memberId, index) => new ExpenseParticipant
+            {
+                Member = membersById[memberId],
+                ShareAmount = (baseShareInCents + (index < remainderCents ? 1 : 0)) / 100m
+            }).ToList()
+        };
+
+        group.Expenses.Add(expense);
+        await _groupRepository.SaveChangesAsync();
+        return Result<Expense>.Ok(expense);
     }
 
     public async Task<Result<GroupMember>?> AddGroupMemberAsync(

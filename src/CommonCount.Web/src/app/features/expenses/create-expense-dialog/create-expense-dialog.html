@@ -1,61 +1,90 @@
-<form class="expense-form" (submit)="createExpense()">
+<form class="expense-form" [formGroup]="expenseForm" (ngSubmit)="createExpense()">
   <h2 mat-dialog-title>Create an expense</h2>
 
   <mat-dialog-content class="expense-dialog-content">
-    <mat-form-field appearance="outline">
-      <mat-label>Expense name</mat-label>
-      <input
-        matInput
-        type="text"
-        [formField]="expenseForm.name"
-      />
-      <mat-error>{{ expenseForm.name().errors()[0]?.message }}</mat-error>
-    </mat-form-field>
+    @if (isLoadingMembers()) {
+      <p role="status">Loading group members…</p>
+    } @else if (memberLoadError()) {
+      <p role="alert">
+        {{ memberLoadError() }}
+        <button mat-button type="button" (click)="loadGroupMembers()">Retry</button>
+      </p>
+    } @else {
+      <mat-form-field appearance="outline">
+        <mat-label>Description</mat-label>
+        <input matInput type="text" formControlName="description" />
+        @if (expenseForm.controls.description.hasError('required')) {
+          <mat-error>A description is required.</mat-error>
+        } @else if (expenseForm.controls.description.hasError('pattern')) {
+          <mat-error>A description is required.</mat-error>
+        } @else if (expenseForm.controls.description.hasError('maxlength')) {
+          <mat-error>Description cannot exceed 200 characters.</mat-error>
+        }
+      </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Amount</mat-label>
-      <span matTextPrefix>€&nbsp;</span>
-      <input
-        matInput
-        type="number"
-        step="1.00"
-        [formField]="expenseForm.amount"
-      />
-      <mat-error>{{ expenseForm.amount().errors()[0]?.message }}</mat-error>
-    </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Amount</mat-label>
+        <span matTextPrefix>€&nbsp;</span>
+        <input
+          matInput
+          type="number"
+          min="0.01"
+          max="99999999.99"
+          step="0.01"
+          formControlName="amount"
+        />
+        @if (expenseForm.controls.amount.hasError('required')) {
+          <mat-error>An amount is required.</mat-error>
+        } @else if (expenseForm.controls.amount.invalid) {
+          <mat-error>Enter a positive amount with no more than two decimal places.</mat-error>
+        }
+      </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Paid by</mat-label>
-      <mat-select
-        matNativeControl
-      >
-        <mat-option value="" selected disabled>Choose a group member</mat-option>
-        <mat-option value="1">Alex Morgan</mat-option>
-        <mat-option value="2">Sam Rivera</mat-option>
-        <mat-option value="3">Jordan Lee</mat-option>
-      </mat-select>
-    </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Paid by</mat-label>
+        <mat-select formControlName="paidByMemberId">
+          @for (member of members(); track member.id) {
+            <mat-option [value]="member.id">{{ member.name }}</mat-option>
+          }
+        </mat-select>
+        @if (
+          expenseForm.controls.paidByMemberId.touched && expenseForm.controls.paidByMemberId.invalid
+        ) {
+          <mat-error>Choose who paid the expense.</mat-error>
+        }
+      </mat-form-field>
 
-    <fieldset class="participants-field">
-      <legend>Who participated?</legend>
-      <p class="field-hint">Select the group members who shared this expense.</p>
+      <fieldset class="participants-field">
+        <legend>Who participated?</legend>
+        <p class="field-hint">Select the group members who shared this expense.</p>
 
-      <mat-selection-list class="participants-selection-list">
-          <mat-list-option>
-            Alex Morgan
-          </mat-list-option>
-          <mat-list-option>
-            Sam Rivera
-          </mat-list-option>
-          <mat-list-option>
-            Jordan Lee
-          </mat-list-option>
-      </mat-selection-list>
-    </fieldset>
+        <div class="participants-selection-list">
+          @for (member of members(); track member.id) {
+            <label>
+              <input
+                type="checkbox"
+                [checked]="selectedParticipantIds().includes(member.id)"
+                (change)="setParticipantSelected(member.id, $event)"
+              />
+              {{ member.name }}
+            </label>
+          }
+        </div>
+        @if (selectedParticipantIds().length === 0) {
+          <p class="field-hint">Select at least one participant.</p>
+        }
+      </fieldset>
+    }
+
+    @if (saveError()) {
+      <p role="alert">{{ saveError() }}</p>
+    }
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">
     <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
-    <button mat-flat-button type="submit">Create expense</button>
+    <button mat-flat-button type="submit" [disabled]="!canSubmit()">
+      {{ isSaving() ? 'Saving…' : 'Create expense' }}
+    </button>
   </mat-dialog-actions>
 </form>
