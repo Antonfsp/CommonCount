@@ -228,6 +228,27 @@ describe('GroupDetail', () => {
     expect(fixture.nativeElement.textContent).toContain('Dinner');
   });
 
+  it('refreshes the group expense list after the dialog confirms creation', () => {
+    dialogOpen.mockReturnValue({ afterClosed: () => of(true) });
+    expenses.getExpenses.mockReturnValueOnce(
+      of([
+        {
+          id: 8,
+          description: 'Dinner',
+          amount: 10,
+          date: '2026-10-14T08:30:00Z',
+          paidByMember: { id: 1, name: 'Owner' },
+        },
+      ]),
+    );
+
+    component.openCreateExpenseDialog();
+    fixture.detectChanges();
+
+    expect(expenses.getExpenses).toHaveBeenLastCalledWith(1);
+    expect(fixture.nativeElement.textContent).toContain('Dinner');
+  });
+
   it('keeps successful additions and reopens settings with only failed names', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     groupService.addMemberToGroup.mockImplementation((_groupId, name) =>
