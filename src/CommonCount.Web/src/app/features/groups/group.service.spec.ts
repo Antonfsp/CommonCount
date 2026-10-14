@@ -1,5 +1,4 @@
-import { TestBed } from '@angular/core/testing';
-import { HttpClient } from '@angular/common/http';
+import '@angular/compiler';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GroupService } from './group.service';
@@ -11,20 +10,29 @@ describe('GroupService', () => {
 
   beforeEach(() => {
     post.mockClear();
-    TestBed.configureTestingModule({
-      providers: [
-        GroupService,
-        { provide: HttpClient, useValue: { post, get: vi.fn() } },
-      ],
-    });
   });
 
+  const buildService = (): GroupService =>
+    Object.assign(Object.create(GroupService.prototype), {
+      http: { post, get: vi.fn() },
+      apiUrl: '/api/groups',
+    }) as GroupService;
+
   it('sends a member display name to the group members endpoint', () => {
-    TestBed.inject(GroupService).addMemberToGroup(12, 'Alex').subscribe();
+    buildService().addMemberToGroup(12, 'Alex').subscribe();
 
     expect(post).toHaveBeenCalledWith(
       expect.stringMatching(/\/12\/members$/),
       { displayName: 'Alex' },
     );
+  });
+
+  it('sends the creator member name when creating a group', () => {
+    buildService().createGroup('Trip', 'Alex').subscribe();
+
+    expect(post).toHaveBeenCalledWith(expect.stringMatching(/\/groups\/create$/), {
+      name: 'Trip',
+      memberName: 'Alex',
+    });
   });
 });

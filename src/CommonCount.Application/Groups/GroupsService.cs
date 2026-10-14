@@ -145,6 +145,20 @@ public class GroupsService
             return Result<Group>.Fail("Group name is required.");
         }
 
+        var memberName = string.IsNullOrWhiteSpace(request.MemberName)
+            ? "Owner"
+            : request.MemberName.Trim();
+
+        if (memberName.Length < 2)
+        {
+            return Result<Group>.Fail("Your group member name must be at least 2 characters long.");
+        }
+
+        if (memberName.Length > 80)
+        {
+            return Result<Group>.Fail("Your group member name cannot exceed 80 characters.");
+        }
+
         var group = new Group
         {
             Name = request.Name.Trim(),
@@ -153,7 +167,7 @@ public class GroupsService
 
         var groupMember = new GroupMember
         {
-            DisplayName = "Owner",
+            DisplayName = memberName,
             UserId = userId,
             Group = group
         };

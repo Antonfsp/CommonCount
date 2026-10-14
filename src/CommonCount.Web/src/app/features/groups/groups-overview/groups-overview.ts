@@ -49,19 +49,19 @@ export class GroupsOverview {
   }
 
   openCreateGroupDialog(): void {
-    const dialogRef = this.dialog.open(CreateGroupDialog, {
-    });
+    const dialogRef = this.dialog.open(CreateGroupDialog, {});
 
-    dialogRef.afterClosed().subscribe((groupName : string | null) => this.onDialogClosed(groupName));
+    dialogRef
+      .afterClosed()
+      .subscribe((groupDetails: { name: string; memberName: string } | null) => this.onDialogClosed(groupDetails));
   }
 
-  onDialogClosed(groupName: string | null): void {
-
-    if (!groupName) {
+  onDialogClosed(groupDetails: { name: string; memberName: string } | null): void {
+    if (!groupDetails?.name) {
       return;
     }
 
-    this.groupService.createGroup(groupName).subscribe({
+    this.groupService.createGroup(groupDetails.name, groupDetails.memberName).subscribe({
       next: () => this.loadGroups(),
       error: () => console.error('Failed to create group'),
     });

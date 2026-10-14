@@ -24,6 +24,7 @@ export class CreateGroupDialog {
 
   readonly form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
+    memberName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
   });
 
   create(): void {
@@ -31,7 +32,10 @@ export class CreateGroupDialog {
       return;
     }
 
-    this.dialogRef.close(this.form.value.name);
+    this.dialogRef.close({
+      name: this.form.value.name,
+      memberName: this.form.value.memberName,
+    });
   }
 
   cancel(): void {

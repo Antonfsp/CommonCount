@@ -18,6 +18,7 @@ export interface MemberSummary {
 }
 export interface CreateGroupRequest {
   name: string;
+  memberName: string;
 }
 
 export interface CreateGroupResponse {
@@ -35,8 +36,8 @@ export class GroupService {
     return this.http.get<GroupSummary[]>(`${this.apiUrl}/`);
   }
 
-  createGroup(name: string): Observable<CreateGroupResponse> {
-    return this.http.post<CreateGroupResponse>(`${this.apiUrl}/create`, { name });
+  createGroup(name: string, memberName: string = 'Owner'): Observable<CreateGroupResponse> {
+    return this.http.post<CreateGroupResponse>(`${this.apiUrl}/create`, { name, memberName });
   }
 
   addMemberToGroup(groupId: number | null, memberName: string): Observable<MemberSummary> {
