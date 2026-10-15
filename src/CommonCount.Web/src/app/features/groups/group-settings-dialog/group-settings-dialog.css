@@ -34,30 +34,70 @@
   font-size: 16px;
 }
 
-.member-entry {
-  margin-top: 4px;
+.pending-member-name {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: text;
 }
 
-.member-entry-field {
+.pending-member-name:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+.pending-member-input {
   width: 100%;
+  padding: 4px 0;
+  border: 0;
+  border-bottom: 1px solid var(--mat-sys-outline);
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  outline: none;
+}
+
+.pending-member-input:focus {
+  border-bottom: 2px solid var(--mat-sys-primary);
+}
+
+.new-member-input {
   min-width: 0;
-  --mdc-outlined-text-field-outline-color: var(--mat-sys-outline-variant);
-  --mdc-outlined-text-field-container-shape: 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  outline: none;
+}
+
+.new-member-input::placeholder {
+  color: var(--mat-sys-on-surface-variant);
+  opacity: 1;
+}
+
+.new-member-input:focus {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 3px;
+  border-radius: 2px;
 }
 
 .member-entry-button {
-  margin-inline-end: 8px;
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .member-entry-button:not(:disabled) {
-  color: var(--mat-sys-on-primary-container);
-  background-color: var(--mat-sys-primary-container);
+  color: var(--mat-sys-primary);
 }
 
-.empty-members {
-  margin: 4px 0;
-  color: var(--mat-sys-on-surface-variant);
-  font: var(--mat-sys-body-medium);
+.member-entry-error {
+  margin: 0 8px;
+  color: var(--mat-sys-error);
+  font: var(--mat-sys-body-small);
 }
 
 mat-dialog-actions {

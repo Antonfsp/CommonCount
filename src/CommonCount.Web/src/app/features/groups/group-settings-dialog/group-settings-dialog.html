@@ -9,45 +9,60 @@
         <p role="alert">{{ data.message }}</p>
       }
 
-      @if (data.members.length > 0 || pendingMembers().length > 0) {
-        <mat-list class="members-list" aria-label="Group members">
-          @if (this.mySelf()) {
-            <mat-list-item class="member-row">
-              <span matListItemTitle>{{ this.mySelf()?.name }}</span>
-              <span matListItemMeta>Myself</span>
-            </mat-list-item>
-          }
-          @for (member of data.members.filter((m) => m.userId?.toString() !== this.mySelf()?.userId?.toString()) ; track member.id) {
-            <mat-list-item class="member-row">
-              <span matListItemTitle>{{ member.name }}</span>
-            </mat-list-item>
-          }
-          @for (name of pendingMembers(); track $index) {
-            <mat-list-item class="member-row">
-              <span matListItemTitle>{{ name }}</span>
-              <span matListItemMeta>New</span>
-            </mat-list-item>
-          }
-        </mat-list>
-      } @else {
+      @if (data.members.length === 0 && pendingMembers().length === 0) {
         <p class="empty-members">No members in this group yet.</p>
       }
 
-      <div class="member-entry">
-        <mat-form-field class="member-entry-field" appearance="outline">
-          <mat-label>New Member</mat-label>
+      <mat-list class="members-list" aria-label="Group members">
+        @for (member of data.members; track member.id) {
+          <mat-list-item class="member-row">
+            <span matListItemTitle>{{ member.name }}</span>
+            @if (this.mySelf() && member.userId?.toString() === this.mySelf()?.userId?.toString()) {
+              <span matListItemMeta>Myself</span>
+            }
+          </mat-list-item>
+        }
+        @for (name of pendingMembers(); track $index; let i = $index) {
+          @if (editingMemberIndex() === i) {
+            <mat-list-item class="member-row">
+              <input
+                class="pending-member-input"
+                matInput
+                aria-label="Edit pending member name"
+                [value]="editingMemberName()"
+                (input)="onEditNameInput($event)"
+                (blur)="savePendingMemberEdit()"
+              />
+            </mat-list-item>
+          } @else {
+            <mat-list-item class="member-row">
+              <button
+                class="pending-member-name"
+                matListItemTitle
+                type="button"
+                (click)="startPendingMemberEdit(i)"
+              >
+                {{ name }}
+              </button>
+
+              <span matListItemMeta>New</span>
+            </mat-list-item>
+          }
+        }
+
+        <mat-list-item class="member-row">
           <input
             matInput
+            matListItemTitle
+            class="new-member-input"
+            placeholder="New Member"
             formControlName="name"
             autocomplete="off"
             maxlength="80"
           />
-          @if (form.controls.name.hasError('duplicate')) {
-            <mat-error>A member with this name already exists.</mat-error>
-          }
           <button
-            mat-mini-fab
-            matSuffix
+            mat-icon-button
+            matListItemMeta
             class="member-entry-button"
             type="button"
             aria-label="Add member to pending list"
@@ -56,8 +71,11 @@
           >
             <mat-icon>person_add</mat-icon>
           </button>
-        </mat-form-field>
-      </div>
+        </mat-list-item>
+      </mat-list>
+      @if (form.controls.name.hasError('duplicate')) {
+        <p class="member-entry-error" role="alert">A member with this name already exists.</p>
+      }
     </fieldset>
   </mat-dialog-content>
 
