@@ -17,6 +17,11 @@ interface GroupSettingsDialogData {
   message?: string;
 }
 
+export interface GroupSettingsDialogResult {
+  existingMembers: MemberSummary[];
+  pendingMembers: string[];
+}
+
 @Component({
   imports: [
     ReactiveFormsModule,
@@ -32,7 +37,7 @@ interface GroupSettingsDialogData {
   templateUrl: './group-settings-dialog.html',
 })
 export class GroupSettingsDialog {
-  readonly dialogRef = inject(MatDialogRef<GroupSettingsDialog>);
+  readonly dialogRef = inject(MatDialogRef<GroupSettingsDialog, GroupSettingsDialogResult | null>);
   readonly data = inject<GroupSettingsDialogData>(MAT_DIALOG_DATA);
   private readonly formBuilder = inject(FormBuilder);
   readonly auth = inject(Auth);
@@ -48,7 +53,11 @@ export class GroupSettingsDialog {
   );
 
   readonly editingMemberName = signal('');
-  readonly editingMemberIndex = signal<number | undefined>(undefined);
+
+  readonly editedExistingMembers = signal(this.data.members.map((member) => ({ ...member })));
+
+  readonly editingExistingMemberIndex = signal<number | undefined>(undefined);
+  readonly editingPendingMemberIndex = signal<number | undefined>(undefined);
 
   startPendingMemberEdit(index: number): void {
     const originalName = this.pendingMembers()[index];
@@ -57,11 +66,22 @@ export class GroupSettingsDialog {
     }
 
     this.editingMemberName.set(originalName);
-    this.editingMemberIndex.set(index);
+    this.editingPendingMemberIndex.set(index);
+  }
+
+  startExistingMemberEdit(index: number): void {
+    const originalName = this.editedExistingMembers()[index].displayName;
+
+    if (originalName === undefined) {
+      return;
+    }
+
+    this.editingMemberName.set(originalName);
+    this.editingExistingMemberIndex.set(index);
   }
 
   savePendingMemberEdit(): void {
-    const index = this.editingMemberIndex();
+    const index = this.editingPendingMemberIndex();
 
     if (index === undefined) {
       return;
@@ -69,20 +89,20 @@ export class GroupSettingsDialog {
 
     const originalName = this.pendingMembers()[index];
     if (originalName === undefined) {
-      this.editingMemberIndex.set(undefined);
+      this.editingPendingMemberIndex.set(undefined);
       return;
     }
 
     const newName = this.editingMemberName().trim();
     const isDuplicate = [
-      ...this.data.members.map((member) => member.name),
+      ...this.editedExistingMembers().map((member) => member.displayName),
       ...this.pendingMembers().filter((_, i) => i !== index),
     ].some((memberName) => memberName.trim().toLowerCase() === newName.toLowerCase());
 
     if (!newName || isDuplicate) {
       // Keep the original list entry if the draft is empty or duplicates another name.
       this.editingMemberName.set('');
-      this.editingMemberIndex.set(undefined);
+      this.editingPendingMemberIndex.set(undefined);
       return;
     }
 
@@ -91,14 +111,57 @@ export class GroupSettingsDialog {
     );
 
     this.editingMemberName.set('');
-    this.editingMemberIndex.set(undefined);
+    this.editingPendingMemberIndex.set(undefined);
+  }
+
+  saveExistingMemberEdit(): void {
+    const index = this.editingExistingMemberIndex();
+
+    if (index === undefined) {
+      return;
+    }
+
+    const memberBeingEdited = this.editedExistingMembers()[index];
+    if (!memberBeingEdited) {
+      this.editingExistingMemberIndex.set(undefined);
+      return;
+    }
+
+    const originalName = this.data.members[index].displayName;
+    if (originalName === undefined) {
+      this.editingExistingMemberIndex.set(undefined);
+      return;
+    }
+
+    const newName = this.editingMemberName().trim();
+
+    const isDuplicate =
+      this.editedExistingMembers().some(
+        (member) =>
+          member.id !== memberBeingEdited.id &&
+          member.displayName.trim().toLowerCase() === newName.toLowerCase(),
+      ) ||
+      this.pendingMembers().some((name) => name.trim().toLowerCase() === newName.toLowerCase());
+
+    if (!newName || isDuplicate) {
+      // Keep the original list entry if the draft is empty or duplicates another name.
+      this.editingMemberName.set('');
+      this.editingExistingMemberIndex.set(undefined);
+      return;
+    }
+
+    this.editedExistingMembers.update((members) =>
+      members.map((member, i) => (i === index ? { ...member, displayName: newName } : member)),
+    );
+
+    this.editingMemberName.set('');
+    this.editingExistingMemberIndex.set(undefined);
   }
 
   onEditNameInput(event: Event): void {
     const input = event.target;
     if (input instanceof HTMLInputElement) {
-      this.editingMemberName.set(input.value);
-    }
+      this.editingMemberName.set(input.value);    }
   }
 
   addMember(): void {
@@ -110,7 +173,7 @@ export class GroupSettingsDialog {
     const name = this.form.controls.name.value.trim();
 
     const isDuplicate = [
-      ...this.data.members.map((member) => member.name),
+      ...this.editedExistingMembers().map((member) => member.displayName),
       ...this.pendingMembers(),
     ].some((memberName) => memberName.trim().toLowerCase() === name.toLowerCase());
 
@@ -124,7 +187,10 @@ export class GroupSettingsDialog {
   }
 
   finish(): void {
-    this.dialogRef.close(this.pendingMembers());
+    this.dialogRef.close({
+      existingMembers: this.editedExistingMembers(),
+      pendingMembers: this.pendingMembers(),
+    });
   }
 
   cancel(): void {

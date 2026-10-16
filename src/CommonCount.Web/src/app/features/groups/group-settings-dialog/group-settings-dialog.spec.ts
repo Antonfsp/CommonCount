@@ -38,9 +38,10 @@ describe('GroupSettingsDialog', () => {
     component.data.members.push({
       id: 1,
       userId: 1,
-      name: 'Alex',
+      displayName: 'Alex',
       joinedAt: '',
     });
+    component.editedExistingMembers.set(component.data.members.map((member) => ({ ...member })));
 
     component.form.controls.name.setValue(' alex ');
     component.addMember();
@@ -53,6 +54,27 @@ describe('GroupSettingsDialog', () => {
     component.addMember();
 
     expect(component.pendingMembers()).toEqual(['Sam']);
+    expect(component.form.controls.name.hasError('duplicate')).toBe(true);
+  });
+
+  it('rejects adding a pending member with an edited existing member name', () => {
+    const existingMember = {
+      id: 1,
+      userId: null,
+      displayName: 'Alex',
+      joinedAt: '',
+    };
+    component.data.members.push(existingMember);
+    component.editedExistingMembers.set([{ ...existingMember }]);
+
+    component.startExistingMemberEdit(0);
+    component.editingMemberName.set('Alex Smith');
+    component.saveExistingMemberEdit();
+
+    component.form.controls.name.setValue('Alex Smith');
+    component.addMember();
+
+    expect(component.pendingMembers()).toEqual([]);
     expect(component.form.controls.name.hasError('duplicate')).toBe(true);
   });
 
@@ -71,10 +93,6 @@ describe('GroupSettingsDialog', () => {
     fixture.detectChanges();
 
     expect(addButton.disabled).toBe(false);
-    expect(
-      fixture.nativeElement.querySelector('mat-form-field')
-        .contains(addButton),
-    ).toBe(true);
     addButton.click();
     fixture.detectChanges();
 

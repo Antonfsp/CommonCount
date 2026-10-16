@@ -13,7 +13,7 @@ export interface GroupSummary {
 export interface MemberSummary {
   id: number;
   userId: number | null;
-  name: string;
+  displayName: string;
   joinedAt: string;
 }
 export interface CreateGroupRequest {
@@ -47,6 +47,18 @@ export class GroupService {
     return this.http.post<MemberSummary>(`${this.apiUrl}/${groupId}/members`, {
       displayName: memberName,
     });
+  }
+
+  updateGroupMember(
+    groupId: number | null,
+    memberId: number,
+    displayName: string,
+  ): Observable<MemberSummary> {
+    if (groupId === null) {
+      return throwError(() => new Error('A group is required to update a member.'));
+    }
+
+    return this.http.put<MemberSummary>(`${this.apiUrl}/${groupId}/members/${memberId}`, { displayName: displayName });
   }
 
   getGroupMembers(groupId: number | null): Observable<MemberSummary[]> {

@@ -7,12 +7,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatListModule } from '@angular/material/list';
 import { MatDialog } from '@angular/material/dialog';
-import { catchError, forkJoin, map, of, Subscription } from 'rxjs';
+import { catchError, forkJoin, map, Observable, of, Subscription } from 'rxjs';
 
 import { CreateExpenseDialog } from '../../expenses/create-expense-dialog/create-expense-dialog';
 import { ExpenseListItem, ExpenseService } from '../../expenses/expense.service';
 import { GroupService, MemberSummary } from '../group.service';
-import { GroupSettingsDialog } from '../group-settings-dialog/group-settings-dialog';
+import {
+  GroupSettingsDialog,
+  GroupSettingsDialogResult,
+} from '../group-settings-dialog/group-settings-dialog';
 
 @Component({
   imports: [DecimalPipe, MatButtonModule, MatIconModule, MatTabsModule, MatListModule],
@@ -37,6 +40,8 @@ export class GroupDetail {
   readonly memberLoadError = signal<string | null>(null);
 
   readonly isLoading = signal(false);
+
+
 
   constructor() {
     this.activatedRoute.paramMap.subscribe((params) => {
@@ -105,7 +110,7 @@ export class GroupDetail {
         this.memberLoadError.set(null);
         this.isLoading.set(false);
 
-        const existingNames = new Set(members.map((member) => member.name.trim().toLowerCase()));
+        const existingNames = new Set(members.map((member) => member.displayName.trim().toLowerCase()));
         const namesToRetry = retryMemberNames.filter(
           (name) => !existingNames.has(name.trim().toLowerCase()),
         );
@@ -165,12 +170,14 @@ export class GroupDetail {
 
     dialogRef
       .afterClosed()
-      .subscribe((memberNames: string[] | null) => this.onGroupSettingsDialogClosed(memberNames));
+      .subscribe((result: GroupSettingsDialogResult | null) =>
+        this.onGroupSettingsDialogClosed(result),
+      );
   }
 
-  onGroupSettingsDialogClosed(memberNames: string[] | null): void {
-    if (!memberNames?.length) {
-      return;
+  onGroupSettingsDialogClosed(result: GroupSettingsDialogResult | null): void {
+    if (result === null) {
+      return; // Cancelled; don't send anything to the backend.
     }
 
     const groupId = this.groupId();
@@ -178,19 +185,49 @@ export class GroupDetail {
       return;
     }
 
-    const additions = memberNames.map((name) =>
-      this.groupService.addMemberToGroup(groupId, name).pipe(
-        map(() => ({ name, success: true as const })),
-        catchError((error: unknown) => {
-          console.error(`Failed to add group member "${name}".`, error);
-          return of({ name, success: false as const });
-        }),
-      ),
-    );
+    const originalMembersById = new Map(this.members().map((member) => [member.id, member]));
 
-    forkJoin(additions).subscribe((results) => {
-      const failedNames = results.filter((result) => !result.success).map((result) => result.name);
-      this.loadGroupMembers(failedNames);
+    const changedMembers = result.existingMembers.filter((member) => {
+      const original = originalMembersById.get(member.id);
+      return original !== undefined && original.displayName !== member.displayName;
+    });
+
+    const requests: Observable<SaveResult>[] = [
+      ...result.pendingMembers.map((name) =>
+        this.groupService.addMemberToGroup(groupId, name).pipe(
+          map((): SaveResult => ({ success: true })),
+          catchError((error: unknown): Observable<SaveResult> => {
+            console.error(`Failed to add group member "${name}".`, error);
+            return of({ success: false, operation: 'add', name });
+          }),
+        ),
+      ),
+      ...changedMembers.map((member) =>
+        this.groupService.updateGroupMember(groupId, member.id, member.displayName).pipe(
+          map((): SaveResult => ({ success: true })),
+          catchError((error: unknown): Observable<SaveResult> => {
+            console.error(`Failed to update group member ${member.id} to "${member.displayName}".`, error);
+            return of({
+              success: false,
+              operation: 'update',
+              name: member.displayName,
+              memberId: member.id,
+            });
+          }),
+        ),
+      ),
+    ];
+
+    if (requests.length === 0) {
+      return;
+    }
+
+    forkJoin(requests).subscribe(() => {
+      this.loadGroupMembers();
     });
   }
 }
+
+type SaveResult =
+  | { success: true }
+  | { success: false; operation: 'add' | 'update'; name: string; memberId?: number };

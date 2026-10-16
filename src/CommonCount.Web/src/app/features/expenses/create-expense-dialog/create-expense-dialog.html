@@ -44,7 +44,7 @@
         <mat-label>Paid by</mat-label>
         <mat-select formControlName="paidByMemberId">
           @for (member of members(); track member.id) {
-            <mat-option [value]="member.id">{{ member.name }}</mat-option>
+            <mat-option [value]="member.id">{{ member.displayName }}</mat-option>
           }
         </mat-select>
         @if (
@@ -66,7 +66,7 @@
                 [checked]="selectedParticipantIds().includes(member.id)"
                 (change)="setParticipantSelected(member.id, $event)"
               />
-              {{ member.name }}
+              {{ member.displayName }}
             </label>
           }
         </div>
