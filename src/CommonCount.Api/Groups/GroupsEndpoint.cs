@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using CommonCount.Application.Common;
 using CommonCount.Application.Groups;
 using CommonCount.Domain.Entities;
 
@@ -41,7 +42,19 @@ public static class GroupsEndpoint
 
             if (!result.IsSuccess)
             {
-                return Results.BadRequest(new { message = result.Error });
+                return result.ErrorType switch
+                {
+                    ResultErrorType.Validation =>
+                        Results.BadRequest(new { message = result.Error }),
+
+                    ResultErrorType.Conflict =>
+                        Results.Conflict(new { message = result.Error }),
+
+                    ResultErrorType.NotFound =>
+                        Results.NotFound(new { message = result.Error }),
+
+                    _ => Results.Problem("An unexpected error occurred.")
+                };
             }
 
             var response = new CreateGroupResponse
@@ -94,7 +107,19 @@ public static class GroupsEndpoint
 
             if (!result.IsSuccess)
             {
-                return Results.BadRequest(new { message = result.Error });
+                return result.ErrorType switch
+                {
+                    ResultErrorType.Validation =>
+                        Results.BadRequest(new { message = result.Error }),
+
+                    ResultErrorType.Conflict =>
+                        Results.Conflict(new { message = result.Error }),
+
+                    ResultErrorType.NotFound =>
+                        Results.NotFound(new { message = result.Error }),
+
+                    _ => Results.Problem("An unexpected error occurred.")
+                };
             }
 
             var expense = result.Value!;
@@ -120,12 +145,70 @@ public static class GroupsEndpoint
                 return Results.NotFound();
             }
 
-            return Results.Ok(members.Select(ToMemberResponse));
+
+            return Results.Ok(members.Select(member => new UpdateGroupMemberResponse
+            {
+                Id = member.Id,
+                UserId = member.UserId,
+                DisplayName = member.DisplayName,
+                JoinedAt = member.JoinedAt
+            }));
         }).WithName("Get group members");
 
         groupGroup.MapPost("/{groupId:int}/members", async (
             int groupId,
             AddMemberRequest request,
+            ClaimsPrincipal user,
+            GroupsService groupsService) =>
+            {
+                var userIdClaim = user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                {
+                    return Results.Unauthorized();
+                }
+
+                var result = await groupsService.AddGroupMemberAsync(groupId, userId, request);
+                if (result is null)
+                {
+                    return Results.NotFound();
+                }
+
+                if (!result.IsSuccess)
+                {
+                    return result.ErrorType switch
+                    {
+                        ResultErrorType.Validation =>
+                        Results.BadRequest(new { message = result.Error }),
+
+                        ResultErrorType.Conflict =>
+                        Results.Conflict(new { message = result.Error }),
+
+                        ResultErrorType.NotFound =>
+                        Results.NotFound(new { message = result.Error }),
+
+                        _ => Results.Problem("An unexpected error occurred.")
+                    };
+                }
+
+                var member = result.Value!;
+
+                var response = new UpdateGroupMemberResponse
+                {
+                    Id = member.Id,
+                    UserId = member.UserId,
+                    DisplayName = member.DisplayName,
+                    JoinedAt = member.JoinedAt
+                };
+
+                return Results.Created(
+                $"/api/groups/{groupId}/members/{member.Id}",
+                response);
+            }).WithName("Add group member");
+
+        groupGroup.MapPut("{groupId:int}/members/{memberId:int}", async (
+            int groupId,
+            int memberId,
+            UpdateGroupMemberRequest request,
             ClaimsPrincipal user,
             GroupsService groupsService) =>
         {
@@ -135,31 +218,39 @@ public static class GroupsEndpoint
                 return Results.Unauthorized();
             }
 
-            var result = await groupsService.AddGroupMemberAsync(groupId, userId, request);
-            if (result is null)
-            {
-                return Results.NotFound();
-            }
+            var result = await groupsService.UpdateGroupMemberAsync(memberId, groupId, userId, request);
 
             if (!result.IsSuccess)
             {
-                return Results.Conflict(new { message = result.Error });
+                return result.ErrorType switch
+                {
+                    ResultErrorType.Validation =>
+                        Results.BadRequest(new { message = result.Error }),
+
+                    ResultErrorType.Conflict =>
+                        Results.Conflict(new { message = result.Error }),
+
+                    ResultErrorType.NotFound =>
+                        Results.NotFound(new { message = result.Error }),
+
+                    _ => Results.Problem("An unexpected error occurred.")
+                };
             }
 
             var member = result.Value!;
-            return Results.Created(
-                $"/api/groups/{groupId}/members/{member.Id}",
-                ToMemberResponse(member));
-        }).WithName("Add group member");
-    }
 
-    private static object ToMemberResponse(CommonCount.Domain.Entities.GroupMember member) => new
-    {
-        id = member.Id,
-        userId = member.UserId,
-        name = member.DisplayName,
-        joinedAt = member.JoinedAt
-    };
+            var memberResponse = new UpdateGroupMemberResponse
+            {
+                Id = member.Id,
+                UserId = member.UserId,
+                DisplayName = member.DisplayName,
+                JoinedAt = member.JoinedAt
+            };
+
+            return Results.Ok(memberResponse);
+
+        }).WithName("Update group member name");
+    }
 
     private static object ToExpenseResponse(Expense expense) => new
     {

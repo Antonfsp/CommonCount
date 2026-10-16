@@ -39,41 +39,55 @@ public class GroupsService
         var group = await _groupRepository.GetGroupWithMembersForUserAsync(groupId, userId);
         if (group is null)
         {
-            return null;
+            return Result<Expense>.Fail(
+                "The user making the request must belong to the group",
+                ResultErrorType.NotFound);
         }
 
         if (string.IsNullOrWhiteSpace(request.Description))
         {
-            return Result<Expense>.Fail("Expense description is required.");
+            return Result<Expense>.Fail(
+                "Expense description is required.",
+                ResultErrorType.Validation);
         }
 
         if (request.Description.Trim().Length > 200)
         {
-            return Result<Expense>.Fail("Expense description cannot exceed 200 characters.");
+            return Result<Expense>.Fail(
+                "Expense description cannot exceed 200 characters.",
+                ResultErrorType.Validation);
         }
 
         if (request.Amount <= 0 || request.Amount > 99_999_999.99m ||
             decimal.Round(request.Amount, 2) != request.Amount)
         {
-            return Result<Expense>.Fail("Expense amount must be positive and have no more than two decimal places.");
+            return Result<Expense>.Fail(
+                "Expense amount must be positive and have no more than two decimal places.",
+                ResultErrorType.Validation);
         }
 
         var participantMemberIds = request.ParticipantMemberIds;
         if (participantMemberIds is null || participantMemberIds.Count == 0)
         {
-            return Result<Expense>.Fail("Select at least one expense participant.");
+            return Result<Expense>.Fail(
+                "Select at least one expense participant.",
+                ResultErrorType.Validation);
         }
 
         if (participantMemberIds.Distinct().Count() != participantMemberIds.Count)
         {
-            return Result<Expense>.Fail("An expense participant can only be selected once.");
+            return Result<Expense>.Fail(
+                "An expense participant can only be selected once.",
+                ResultErrorType.Validation);
         }
 
         var membersById = group.Members.ToDictionary(member => member.Id);
         if (!membersById.TryGetValue(request.PaidByMemberId, out var paidByMember) ||
             participantMemberIds.Any(memberId => !membersById.ContainsKey(memberId)))
         {
-            return Result<Expense>.Fail("The payer and participants must be members of this group.");
+            return Result<Expense>.Fail(
+                "The payer and participants must be members of this group.",
+                ResultErrorType.Validation);
         }
 
         var amountInCents = decimal.ToInt64(request.Amount * 100m);
@@ -98,32 +112,41 @@ public class GroupsService
         return Result<Expense>.Ok(expense);
     }
 
-    public async Task<Result<GroupMember>?> AddGroupMemberAsync(
+    public async Task<Result<GroupMember>> AddGroupMemberAsync(
         int groupId,
         int userId,
         AddMemberRequest request)
     {
+        // Validates that the user belongs to group
         var group = await _groupRepository.GetGroupWithMembersForUserAsync(groupId, userId);
         if (group is null)
         {
-            return null;
+            return Result<GroupMember>.Fail(
+                "The user making the request must belong to the group",
+                ResultErrorType.NotFound);
         }
 
         if (string.IsNullOrWhiteSpace(request.DisplayName))
         {
-            return Result<GroupMember>.Fail("Member name is required.");
+            return Result<GroupMember>.Fail(
+                "Member name is required.",
+                ResultErrorType.Validation);
         }
 
         var displayName = request.DisplayName.Trim();
         if (displayName.Length > 80)
         {
-            return Result<GroupMember>.Fail("Member name cannot exceed 80 characters.");
+            return Result<GroupMember>.Fail(
+                "Member name cannot exceed 80 characters.",
+                ResultErrorType.Validation);
         }
 
         if (group.Members.Any(member =>
                 string.Equals(member.DisplayName.Trim(), displayName, StringComparison.OrdinalIgnoreCase)))
         {
-            return Result<GroupMember>.Fail("A member with this name already exists in the group.");
+            return Result<GroupMember>.Fail(
+                "A member with this name already exists in the group.",
+                ResultErrorType.Conflict);
         }
 
         var groupMember = new GroupMember
@@ -133,6 +156,59 @@ public class GroupsService
         };
 
         group.Members.Add(groupMember);
+        await _groupRepository.SaveChangesAsync();
+
+        return Result<GroupMember>.Ok(groupMember);
+    }
+
+    public async Task<Result<GroupMember>> UpdateGroupMemberAsync(
+        int groupMemberId,
+        int groupId,
+        int userId,
+        UpdateGroupMemberRequest request
+    )
+    {
+        // Validates that the user belongs to group
+        var group = await _groupRepository.GetGroupWithMembersForUserAsync(groupId, userId);
+        if (group is null)
+        {
+            return Result<GroupMember>.Fail(
+                "The user making the request must belong to the group",
+                ResultErrorType.NotFound);
+        }
+
+        if (string.IsNullOrWhiteSpace(request.DisplayName))
+        {
+            return Result<GroupMember>.Fail(
+                "Member name is required.",
+                ResultErrorType.Validation);
+        }
+
+        var displayName = request.DisplayName.Trim();
+        if (displayName.Length > 80)
+        {
+            return Result<GroupMember>.Fail(
+                "Member name cannot exceed 80 characters.",
+                ResultErrorType.Validation);
+        }
+
+        var groupMember = group.Members.FirstOrDefault(member => member.Id == groupMemberId);
+        if (groupMember is null)
+        {
+            return Result<GroupMember>.Fail(
+                "The group member doesn't exist",
+                ResultErrorType.NotFound);
+        }
+        else if (group.Members.Any(member =>
+                member.Id != groupMember.Id &&
+                string.Equals(member.DisplayName.Trim(), displayName, StringComparison.OrdinalIgnoreCase)))
+        {
+            return Result<GroupMember>.Fail(
+                "A member with this name already exists in the group.",
+                ResultErrorType.Conflict);
+        }
+
+        groupMember.DisplayName = displayName;
         await _groupRepository.SaveChangesAsync();
 
         return Result<GroupMember>.Ok(groupMember);

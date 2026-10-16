@@ -11,7 +11,6 @@ using CommonCount.Infrastructure.Data;
 using CommonCount.Infrastructure.Groups;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
