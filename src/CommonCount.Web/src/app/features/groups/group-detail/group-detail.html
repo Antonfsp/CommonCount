@@ -14,12 +14,19 @@
         } @else {
           <mat-list class="expense-list">
             @for (expense of expenses(); track expense.id) {
-              <mat-list-item class="expense-list-item">
-                <span matListItemTitle>{{ expense.description }}</span>
+              <button
+              mat-list-item
+              class="expense-list-item"
+              type="button"
+              (click)="openEditExpenseDialog(expense)"
+              >
+
+
+              <span matListItemTitle>{{ expense.description }}</span>
                 <span matListItemLine>
                   {{ expense.amount | number: '1.2-2' }} € · Paid by {{ expense.paidByMember.name }}
                 </span>
-              </mat-list-item>
+              </button>
             }
           </mat-list>
         }

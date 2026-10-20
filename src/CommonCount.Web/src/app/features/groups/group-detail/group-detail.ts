@@ -9,7 +9,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatDialog } from '@angular/material/dialog';
 import { catchError, forkJoin, map, Observable, of, Subscription } from 'rxjs';
 
-import { CreateExpenseDialog } from '../../expenses/create-expense-dialog/create-expense-dialog';
+import { ExpenseDialogData, ExpenseDialog } from '../../expenses/expense-dialog/expense-dialog';
 import { ExpenseListItem, ExpenseService } from '../../expenses/expense.service';
 import { GroupService, MemberSummary } from '../group.service';
 import {
@@ -40,8 +40,6 @@ export class GroupDetail {
   readonly memberLoadError = signal<string | null>(null);
 
   readonly isLoading = signal(false);
-
-
 
   constructor() {
     this.activatedRoute.paramMap.subscribe((params) => {
@@ -110,7 +108,12 @@ export class GroupDetail {
         this.memberLoadError.set(null);
         this.isLoading.set(false);
 
-        const existingNames = new Set(members.map((member) => member.displayName.trim().toLowerCase()));
+        const existingNames = new Set(
+          members.map((member) => member.displayName.trim().toLowerCase()),
+        );
+        data: {
+          groupId;
+        }
         const namesToRetry = retryMemberNames.filter(
           (name) => !existingNames.has(name.trim().toLowerCase()),
         );
@@ -142,16 +145,31 @@ export class GroupDetail {
     if (groupId === null) {
       return;
     }
+    const data: ExpenseDialogData = { mode: 'create', groupId: groupId };
 
-    const dialogRef = this.dialog.open(CreateExpenseDialog, { data: { groupId } });
+    const dialogRef = this.dialog.open(ExpenseDialog, { data });
 
     dialogRef
       .afterClosed()
-      .subscribe((created: boolean | null) => this.onCreateExpenseDialogClosed(created));
+      .subscribe((created: boolean | null) => this.onExpenseDialogClosed(created));
   }
 
-  onCreateExpenseDialogClosed(created: boolean | null): void {
-    if (!created) {
+  openEditExpenseDialog(expense: ExpenseListItem): void {
+    const groupId = this.groupId();
+    if (groupId === null) {
+      return;
+    }
+    const data: ExpenseDialogData = { mode: 'edit', groupId: groupId, expense: expense };
+
+    const dialogRef = this.dialog.open(ExpenseDialog, { data });
+
+    dialogRef
+      .afterClosed()
+      .subscribe((edited: boolean | null) => this.onExpenseDialogClosed(edited));
+  }
+
+  onExpenseDialogClosed(changed: boolean | null): void {
+    if (!changed) {
       return;
     }
 
@@ -206,7 +224,10 @@ export class GroupDetail {
         this.groupService.updateGroupMember(groupId, member.id, member.displayName).pipe(
           map((): SaveResult => ({ success: true })),
           catchError((error: unknown): Observable<SaveResult> => {
-            console.error(`Failed to update group member ${member.id} to "${member.displayName}".`, error);
+            console.error(
+              `Failed to update group member ${member.id} to "${member.displayName}".`,
+              error,
+            );
             return of({
               success: false,
               operation: 'update',

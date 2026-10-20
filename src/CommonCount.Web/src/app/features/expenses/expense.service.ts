@@ -12,16 +12,20 @@ export interface ExpenseListItem {
     id: number;
     name: string;
   };
+  participants: {
+    memberId: number;
+    shareAmount: number;
+  }[];
 }
 
-export interface CreateExpenseRequest {
+export interface ExpenseRequest {
   description: string;
   amount: number;
   paidByMemberId: number;
   participantMemberIds: number[];
 }
 
-export interface CreateExpenseResponse {
+export interface ExpenseResponse {
   id: number;
   description: string;
   amount: number;
@@ -36,9 +40,16 @@ export class ExpenseService {
     return this.http.get<ExpenseListItem[]>(`${environment.apiUrl}/groups/${groupId}/expenses`);
   }
 
-  createExpense(groupId: number, request: CreateExpenseRequest): Observable<CreateExpenseResponse> {
-    return this.http.post<CreateExpenseResponse>(
+  createExpense(groupId: number, request: ExpenseRequest): Observable<ExpenseResponse> {
+    return this.http.post<ExpenseResponse>(
       `${environment.apiUrl}/groups/${groupId}/expenses`,
+      request,
+    );
+  }
+
+  editExpense(groupId: number, expenseId: number, request: ExpenseRequest): Observable<ExpenseResponse> {
+    return this.http.put<ExpenseResponse>(
+      `${environment.apiUrl}/groups/${groupId}/expenses/${expenseId}`,
       request,
     );
   }

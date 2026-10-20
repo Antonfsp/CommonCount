@@ -89,7 +89,7 @@ public static class GroupsEndpoint
 
         groupGroup.MapPost("/{groupId:int}/expenses", async (
             int groupId,
-            CreateExpenseRequest request,
+            ExpenseRequest request,
             ClaimsPrincipal user,
             GroupsService groupsService) =>
         {
@@ -127,6 +127,42 @@ public static class GroupsEndpoint
                 $"/api/groups/{groupId}/expenses/{expense.Id}",
                 ToExpenseResponse(expense));
         }).WithName("Create group expense");
+
+        groupGroup.MapPut("/{groupId:int}/expenses/{expenseId:int}", async (
+            int groupId,
+            int expenseId,
+            ExpenseRequest request,
+            ClaimsPrincipal user,
+            GroupsService groupsService) =>
+        {
+            var userIdClaim = user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var result = await groupsService.UpdateExpenseForUserAsync(groupId, expenseId, userId, request);
+
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ResultErrorType.Validation =>
+                        Results.BadRequest(new { message = result.Error }),
+
+                    ResultErrorType.Conflict =>
+                        Results.Conflict(new { message = result.Error }),
+
+                    ResultErrorType.NotFound =>
+                        Results.NotFound(new { message = result.Error }),
+
+                    _ => Results.Problem("An unexpected error occurred.")
+                };
+            }
+
+            var expense = result.Value!;
+            return Results.Ok(ToExpenseResponse(expense));
+        }).WithName("Update group expense");
 
         groupGroup.MapGet("/{groupId:int}/members", async (
             int groupId,

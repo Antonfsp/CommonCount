@@ -9,11 +9,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { finalize } from 'rxjs';
 
 import { GroupService, MemberSummary } from '../../groups/group.service';
-import { ExpenseService } from '../expense.service';
+import { ExpenseService, ExpenseListItem, ExpenseRequest } from '../expense.service';
 
-interface CreateExpenseDialogData {
-  groupId: number;
-}
+export type ExpenseDialogData =
+  { mode: 'create'; groupId: number } | { mode: 'edit'; groupId: number; expense: ExpenseListItem };
 
 @Component({
   imports: [
@@ -24,23 +23,24 @@ interface CreateExpenseDialogData {
     MatDialogModule,
     MatSelectModule,
   ],
-  selector: 'app-create-expense-dialog',
-  styleUrl: './create-expense-dialog.css',
-  templateUrl: './create-expense-dialog.html',
+  selector: 'app-expense-dialog',
+  styleUrl: './expense-dialog.css',
+  templateUrl: './expense-dialog.html',
 })
-export class CreateExpenseDialog {
-  private readonly dialogRef = inject(MatDialogRef<CreateExpenseDialog>);
-  private readonly data = inject<CreateExpenseDialogData>(MAT_DIALOG_DATA);
+export class ExpenseDialog {
+  private readonly dialogRef = inject(MatDialogRef<ExpenseDialog>);
+  private readonly data = inject<ExpenseDialogData>(MAT_DIALOG_DATA);
   private readonly groupService = inject(GroupService);
   private readonly expenseService = inject(ExpenseService);
   private readonly fb = inject(FormBuilder);
 
   readonly members = signal<MemberSummary[]>([]);
+  readonly selectedParticipantIds = signal<number[]>([]);
+
   readonly isLoadingMembers = signal(false);
   readonly memberLoadError = signal<string | null>(null);
   readonly isSaving = signal(false);
   readonly saveError = signal<string | null>(null);
-  readonly selectedParticipantIds = signal<number[]>([]);
 
   readonly expenseForm = this.fb.group({
     description: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(200)]],
@@ -57,6 +57,17 @@ export class CreateExpenseDialog {
   });
 
   constructor() {
+    if (this.data.mode === 'edit') {
+      const expense = this.data.expense;
+      this.expenseForm.patchValue({
+        description: expense.description,
+        amount: expense.amount,
+        paidByMemberId: expense.paidByMember.id,
+      });
+      this.selectedParticipantIds.set([
+        ...expense.participants.map((participant) => participant.memberId),
+      ]);
+    }
     this.loadGroupMembers();
   }
 
@@ -72,6 +83,7 @@ export class CreateExpenseDialog {
         error: (error: unknown) => {
           console.error('Failed to load group members for expense creation.', error);
           this.memberLoadError.set('Could not load the group members. Try again.');
+          const groupId = this.data.groupId;
         },
       });
   }
@@ -99,7 +111,7 @@ export class CreateExpenseDialog {
     );
   }
 
-  createExpense(): void {
+  saveExpense(): void {
     if (this.isSaving() || this.isLoadingMembers() || this.memberLoadError()) {
       return;
     }
@@ -109,25 +121,53 @@ export class CreateExpenseDialog {
       return;
     }
 
+    const groupId = this.data.groupId;
+    const selectedParticipantIds = this.selectedParticipantIds();
     const { description, amount, paidByMemberId } = this.expenseForm.getRawValue();
-    if (!description?.trim() || amount === null || paidByMemberId === null) {
+    if (
+      groupId === null ||
+      !description?.trim() ||
+      amount === null ||
+      paidByMemberId === null ||
+      selectedParticipantIds.length === 0
+    ) {
       return;
     }
 
+    const request: ExpenseRequest = {
+      description: description.trim(),
+      amount: amount,
+      paidByMemberId: paidByMemberId,
+      participantMemberIds: selectedParticipantIds,
+    };
+
     this.isSaving.set(true);
     this.saveError.set(null);
+
+    this.data.mode === 'edit' ? this.editExpense(groupId, this.data.expense.id, request) : this.createExpense(groupId, request);
+  }
+
+  createExpense(groupId: number, request: ExpenseRequest): void {
     this.expenseService
-      .createExpense(this.data.groupId, {
-        description: description.trim(),
-        amount,
-        paidByMemberId,
-        participantMemberIds: this.selectedParticipantIds(),
-      })
+      .createExpense(groupId, request)
       .pipe(finalize(() => this.isSaving.set(false)))
       .subscribe({
         next: () => this.dialogRef.close(true),
         error: (error: unknown) => {
           console.error('Failed to create group expense.', error);
+          this.saveError.set('Could not save the expense. Try again.');
+        },
+      });
+  }
+
+  editExpense(groupId: number, expenseId: number, request: ExpenseRequest): void {
+    this.expenseService
+      .editExpense(groupId, expenseId, request)
+      .pipe(finalize(() => this.isSaving.set(false)))
+      .subscribe({
+        next: () => this.dialogRef.close(true),
+        error: (error: unknown) => {
+          console.error('Failed to edit group expense.', error);
           this.saveError.set('Could not save the expense. Try again.');
         },
       });

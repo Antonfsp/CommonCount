@@ -48,6 +48,11 @@ public class GroupRepository : IGroupRepository
         return group?.Expenses.ToList();
     }
 
+    public async Task<Expense?> GetExpenseByIdAsync(int expenseId)
+    {
+        return await _db.Expenses.Include(expense => expense.Participants).FirstOrDefaultAsync(expense => expense.Id == expenseId);
+    }
+
     public async Task<bool> InviteCodeExistsAsync(string inviteCode)
     => await _db.Groups.AnyAsync(g => g.InviteCode == inviteCode);
 

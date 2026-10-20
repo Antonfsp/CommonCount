@@ -4,7 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { Observable, of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExpenseListItem, ExpenseService } from '../../expenses/expense.service';
-import { CreateExpenseDialog } from '../../expenses/create-expense-dialog/create-expense-dialog';
+import { CreateExpenseDialog } from '../../expenses/expense-dialog/expense-dialog';
 import { GroupService, MemberSummary } from '../group.service';
 import { GroupSettingsDialog } from '../group-settings-dialog/group-settings-dialog';
 import { GroupDetail } from './group-detail';

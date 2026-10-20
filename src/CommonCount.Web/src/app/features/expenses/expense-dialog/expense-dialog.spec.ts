@@ -5,7 +5,7 @@ import { afterEach, vi } from 'vitest';
 
 import { GroupService } from '../../groups/group.service';
 import { ExpenseService } from '../expense.service';
-import { CreateExpenseDialog } from './create-expense-dialog';
+import { CreateExpenseDialog } from './expense-dialog';
 
 describe('CreateExpenseDialog', () => {
   let component: CreateExpenseDialog;

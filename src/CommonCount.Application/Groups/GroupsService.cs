@@ -34,7 +34,7 @@ public class GroupsService
     public async Task<Result<Expense>?> CreateExpenseForUserAsync(
         int groupId,
         int userId,
-        CreateExpenseRequest request)
+        ExpenseRequest request)
     {
         var group = await _groupRepository.GetGroupWithMembersForUserAsync(groupId, userId);
         if (group is null)
@@ -108,6 +108,118 @@ public class GroupsService
         };
 
         group.Expenses.Add(expense);
+        await _groupRepository.SaveChangesAsync();
+        return Result<Expense>.Ok(expense);
+    }
+
+    public async Task<Result<Expense>> UpdateExpenseForUserAsync(
+       int groupId,
+       int expenseId,
+       int userId,
+       ExpenseRequest request)
+    {
+        var group = await _groupRepository.GetGroupWithMembersForUserAsync(groupId, userId);
+        if (group is null)
+        {
+            return Result<Expense>.Fail(
+                "The user making the request must belong to the group",
+                ResultErrorType.NotFound);
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Description))
+        {
+            return Result<Expense>.Fail(
+                "Expense description is required.",
+                ResultErrorType.Validation);
+        }
+
+        if (request.Description.Trim().Length > 200)
+        {
+            return Result<Expense>.Fail(
+                "Expense description cannot exceed 200 characters.",
+                ResultErrorType.Validation);
+        }
+
+        if (request.Amount <= 0 || request.Amount > 99_999_999.99m ||
+            decimal.Round(request.Amount, 2) != request.Amount)
+        {
+            return Result<Expense>.Fail(
+                "Expense amount must be positive and have no more than two decimal places.",
+                ResultErrorType.Validation);
+        }
+
+        var participantMemberIds = request.ParticipantMemberIds;
+        if (participantMemberIds is null || participantMemberIds.Count == 0)
+        {
+            return Result<Expense>.Fail(
+                "Select at least one expense participant.",
+                ResultErrorType.Validation);
+        }
+
+        if (participantMemberIds.Distinct().Count() != participantMemberIds.Count)
+        {
+            return Result<Expense>.Fail(
+                "An expense participant can only be selected once.",
+                ResultErrorType.Validation);
+        }
+
+        var membersById = group.Members.ToDictionary(member => member.Id);
+        if (!membersById.TryGetValue(request.PaidByMemberId, out var paidByMember) ||
+            participantMemberIds.Any(memberId => !membersById.ContainsKey(memberId)))
+        {
+            return Result<Expense>.Fail(
+                "The payer and participants must be members of this group.",
+                ResultErrorType.Validation);
+        }
+
+        var desiredMemberIds = participantMemberIds.ToHashSet();
+
+        // Calculating each participant’s share and allocating any remaining cents
+        var amountInCents = decimal.ToInt64(request.Amount * 100m);
+        var baseShareInCents = amountInCents / participantMemberIds.Count;
+        var remainderCents = amountInCents % participantMemberIds.Count;
+
+
+        var expense = await _groupRepository.GetExpenseByIdAsync(expenseId);
+
+        if (expense is null || expense.GroupId != groupId)
+        {
+            return Result<Expense>.Fail(
+                "The expense doesn't exist",
+                ResultErrorType.NotFound);
+        }
+
+        expense.Description = request.Description.Trim();
+        expense.Amount = request.Amount;
+        expense.Group = group;
+        expense.PaidByMember = paidByMember;
+
+        foreach (var participant in expense.Participants
+                    .Where(p => !participantMemberIds.Contains(p.MemberId))
+                    .ToList())
+        {
+            expense.Participants.Remove(participant);
+        }
+
+        for (var index = 0; index < participantMemberIds.Count; index++)
+        {
+            var memberId = participantMemberIds[index];
+
+            var participant = expense.Participants.FirstOrDefault(p => p.MemberId == memberId);
+
+            if (participant is null)
+            {
+                participant = new ExpenseParticipant
+                {
+                    Member = membersById[memberId]
+                };
+                expense.Participants.Add(participant);
+            }
+
+            var shareInCents = baseShareInCents + (index < remainderCents ? 1 : 0);
+            participant.ShareAmount = shareInCents / 100m;
+        }
+
         await _groupRepository.SaveChangesAsync();
         return Result<Expense>.Ok(expense);
     }

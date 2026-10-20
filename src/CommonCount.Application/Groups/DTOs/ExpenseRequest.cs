@@ -1,7 +1,6 @@
 namespace CommonCount.Application.Groups;
 
-public class CreateExpenseRequest
-{
+public class ExpenseRequest{
     public string Description { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public int PaidByMemberId { get; set; }

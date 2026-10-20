@@ -45,6 +45,12 @@
     transform 160ms ease,
     box-shadow 160ms ease,
     border-color 160ms ease;
+  text-align: left;
+}
+
+.expense-list-item [matListItemLine] {
+  margin-top: 5px;
+  margin-left: -4px;
 }
 
 .expense-list-item:hover,
