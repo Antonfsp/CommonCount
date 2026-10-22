@@ -3,23 +3,17 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
 import { GroupService, GroupSummary } from '../group.service';
-import { CreateGroupDialog } from '../create-group-dialog/create-group-dialog';
 
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { NewGroupDialog } from '../new-group-dialog/new-group-dialog';
 
 @Component({
   selector: 'app-groups-overview',
   standalone: true,
-  imports: [
-    CommonModule,
-    MatButtonModule,
-    MatIconModule,
-    MatCardModule,
-    MatDialogModule,
-  ],
+  imports: [CommonModule, MatButtonModule, MatIconModule, MatCardModule, MatDialogModule],
   styleUrl: './groups-overview.css',
   templateUrl: './groups-overview.html',
 })
@@ -48,24 +42,11 @@ export class GroupsOverview {
     });
   }
 
-  openCreateGroupDialog(): void {
-    const dialogRef = this.dialog.open(CreateGroupDialog, {});
-    dialogRef
-      .afterClosed()
-      .subscribe((groupDetails: { name: string; memberName: string } | null) =>
-        this.onDialogClosed(groupDetails),
-      );
-  }
-
-  onDialogClosed(groupDetails: { name: string; memberName: string } | null): void {
-    if (!groupDetails?.name) {
-      return;
-    }
-
-    this.groupService.createGroup(groupDetails.name, groupDetails.memberName).subscribe({
-      next: () => this.loadGroups(),
-      error: () => console.error('Failed to create group'),
-    });
+  openNewGroupDialog(): void {
+    this.dialog.open(NewGroupDialog, { autoFocus: 'dialog'})
+    .afterClosed().subscribe((created) => {
+      if (created) this.loadGroups()
+    })
   }
 
   openGroup(groupId: number): void {

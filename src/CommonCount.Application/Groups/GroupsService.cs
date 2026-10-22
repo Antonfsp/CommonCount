@@ -1,3 +1,5 @@
+using System.Drawing;
+using System.Security.Claims;
 using CommonCount.Application.Common;
 using CommonCount.Application.Groups;
 using CommonCount.Domain.Entities;
@@ -365,6 +367,88 @@ public class GroupsService
         await _groupRepository.AddAsync(group);
 
         return Result<Group>.Ok(group);
+    }
+
+    public async Task<Result<Group>> GetGroupByInviteCodeWithMembersAsync(string inviteCode)
+    {
+        if (string.IsNullOrWhiteSpace(inviteCode))
+        {
+            return Result<Group>.Fail("Invite code is required.", ResultErrorType.NotFound);
+        }
+
+        if (inviteCode.Length != 6)
+        {
+            return Result<Group>.Fail("The invite code must be 6 characters long.", ResultErrorType.Validation);
+        }
+
+        var group = await _groupRepository.GetByInviteCodeWithMembersAsync(inviteCode);
+
+        if (group is null)
+        {
+            return Result<Group>.Fail("Group not found", ResultErrorType.NotFound);
+        }
+
+        return Result<Group>.Ok(group);
+    }
+
+    public async Task<Result<GroupMember>> JoinGroupAsync(JoinGroupRequest request, int userId)
+    {
+        if (request is null || string.IsNullOrEmpty(request.InviteCode))
+        {
+            return Result<GroupMember>.Fail("Couldn't join the group", ResultErrorType.NotFound);
+        }
+
+        var group = await _groupRepository.GetByInviteCodeWithMembersAsync(request.InviteCode);
+
+        if (group is null)
+        {
+            return Result<GroupMember>.Fail("Couldn't find the group", ResultErrorType.NotFound);
+        }
+
+        GroupMember? groupMember;
+
+        if (request.MemberId is null)
+        {
+            if (string.IsNullOrWhiteSpace(request.NewMemberDisplayName))
+            {
+                return Result<GroupMember>.Fail("tHE group member name is required", ResultErrorType.Validation);
+            }
+            var normalizedDisplayName = request.NewMemberDisplayName.Trim();
+
+            if (normalizedDisplayName.Length > 80)
+            {
+                return Result<GroupMember>.Fail("Your group member name cannot exceed 80 characters.", ResultErrorType.Validation);
+            }
+
+            groupMember = new GroupMember
+            {
+                DisplayName = request.NewMemberDisplayName,
+                Group = group,
+                UserId = userId,
+            };
+
+            group.Members.Add(groupMember);
+        }
+        else
+        {
+            groupMember = group.Members.FirstOrDefault(member => member.Id == request.MemberId);
+
+            if (groupMember is null)
+            {
+                return Result<GroupMember>.Fail("Couldn't find the group member", ResultErrorType.NotFound);
+            }
+
+            if (groupMember.UserId is not null)
+            {
+                return Result<GroupMember>.Fail("Thegroup member is already associated to an user", ResultErrorType.Conflict);
+            }
+
+            groupMember.UserId = userId;
+        }
+
+        await _groupRepository.SaveChangesAsync();
+
+        return Result<GroupMember>.Ok(groupMember);
     }
 
     private async Task<string> GenerateUniqueInviteCodeAsync()

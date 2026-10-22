@@ -1,0 +1,82 @@
+<h2 mat-dialog-title>Join a group</h2>
+
+<mat-dialog-content>
+  <div class="invite-code-row">
+    <mat-form-field class="invite-code-field" subscriptSizing="dynamic">
+      <mat-label>Invite code</mat-label>
+      <input
+        matInput
+        placeholder="X3Q5TS"
+        [formField]="joinForm.inviteCode"
+        autocapitalize="characters"
+        class="invite-code-input"
+      />
+    </mat-form-field>
+    <button
+      mat-flat-button
+      type="button"
+      [showProgress]="isSearching()"
+      (click)="findGroup()"
+      [disabled]="joinForm.inviteCode().invalid()"
+    >
+      <mat-progress-spinner
+        progressIndicator
+        mode="indeterminate"
+        diameter="20"
+        aria-label="Searching"
+        tabindex=""
+      />
+      Find group
+      <mat-icon>search</mat-icon>
+    </button>
+  </div>
+
+  @if (groupPreview(); as preview) {
+    <section class="group-preview">
+      <header class="group-preview-header">
+        <mat-icon aria-hidden="true">groups</mat-icon>
+        <div>
+          <h3>{{ preview.groupName }}</h3>
+        </div>
+      </header>
+
+      <fieldset class="members-field">
+        <legend>Choose a member to join the group</legend>
+
+        <mat-radio-group
+          class="members-list"
+          [value]="joinForm.memberChoice().value()"
+          (change)="joinForm.memberChoice().value.set($event.value)"
+        >
+          @for (member of preview.members; track member.memberId) {
+            <div class="member-row">
+              <mat-radio-button [value]="member.memberId.toString()" [disabled]="member.isClaimed">
+                {{ member.displayName }}
+              </mat-radio-button>
+
+              @if (member.isClaimed) {
+                <span class="member-status claimed">Already claimed</span>
+              } @else {
+                <span class="member-status available">Available</span>
+              }
+            </div>
+          }
+          <div class="member-row">
+            <mat-radio-button value="new">Create a new member</mat-radio-button>
+          </div>
+        </mat-radio-group>
+        @if (joinForm.memberChoice().value() === 'new') {
+          <mat-form-field>
+            <mat-label>New member name</mat-label>
+            <input matInput placeholder="Your name" [formField]="joinForm.selectedMemberName" />
+          </mat-form-field>
+        }
+      </fieldset>
+    </section>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+  <button mat-flat-button type="button" (click)="joinGroup()">Join</button>
+</mat-dialog-actions>

@@ -286,6 +286,88 @@ public static class GroupsEndpoint
             return Results.Ok(memberResponse);
 
         }).WithName("Update group member name");
+
+        groupGroup.MapGet("/{inviteCode}", async (
+            string inviteCode,
+            ClaimsPrincipal user,
+            GroupsService groupsService) =>
+        {
+            var userIdClaim = user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var result = await groupsService.GetGroupByInviteCodeWithMembersAsync(inviteCode);
+
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ResultErrorType.Validation =>
+                        Results.BadRequest(new { message = result.Error }),
+
+                    ResultErrorType.Conflict =>
+                        Results.Conflict(new { message = result.Error }),
+
+                    ResultErrorType.NotFound =>
+                        Results.NotFound(new { message = result.Error }),
+
+                    _ => Results.Problem("An unexpected error occurred.")
+                };
+            }
+
+            var group = result.Value!;
+
+            var response = new JoinGroupPreviewResponse
+            {
+                InviteCode = group.InviteCode,
+                GroupName = group.Name,
+                Members = group.Members.Select(member => new GroupMemberResponse
+                {
+                    MemberId = member.Id,
+                    DisplayName = member.DisplayName,
+                    IsClaimed = member.UserId is not null,
+                }).ToList()
+            };
+
+            return Results.Ok(response);
+
+        }).WithName("Get group by invite code");
+
+        groupGroup.MapPost("/join", async (
+            JoinGroupRequest joinGroupRequest,
+            ClaimsPrincipal user,
+            GroupsService groupsService) =>
+        {
+            var userIdClaim = user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var result = await groupsService.JoinGroupAsync(joinGroupRequest, userId);
+
+            if (!result.IsSuccess)
+            {
+                return result.ErrorType switch
+                {
+                    ResultErrorType.Validation =>
+                        Results.BadRequest(new { message = result.Error }),
+
+                    ResultErrorType.Conflict =>
+                        Results.Conflict(new { message = result.Error }),
+
+                    ResultErrorType.NotFound =>
+                        Results.NotFound(new { message = result.Error }),
+
+                    _ => Results.Problem("An unexpected error occurred.")
+                };
+            }
+
+            return Results.Ok();
+
+        }).WithName("User joins a group by claimin a member");
     }
 
     private static object ToExpenseResponse(Expense expense) => new

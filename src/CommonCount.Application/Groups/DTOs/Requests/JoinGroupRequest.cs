@@ -1,6 +1,6 @@
 namespace CommonCount.Application.Groups;
 
-public class ClaimMemberRequest
+public class JoinGroupRequest
 {
     public string InviteCode { get; set; } = string.Empty;
     public int? MemberId { get; set; } // null = create a new member instead of claiming one

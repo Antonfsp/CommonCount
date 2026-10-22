@@ -16,15 +16,10 @@ export class AuthLanding {
   private readonly dialog = inject(MatDialog);
 
   openLoginDialog(): void {
-    this.dialog.open(LoginDialog, this.dialogConfig);
+    this.dialog.open(LoginDialog);
   }
 
   openRegisterDialog(): void {
-    this.dialog.open(RegisterDialog, this.dialogConfig);
+    this.dialog.open(RegisterDialog);
   }
-
-  private readonly dialogConfig = {
-    width: '440px',
-    maxWidth: 'calc(100vw - 32px)',
-  };
 }

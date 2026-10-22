@@ -1,0 +1,21 @@
+.decision-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.create-group-button {
+  --mat-fab-container-color: var(--mat-sys-surface);
+  --mat-fab-foreground-color: var(--mat-sys-primary);
+
+  border: 1px solid var(--mat-sys-primary);
+  box-shadow: none;
+}
+
+.join-group-button {
+  --mat-fab-container-color: var(--mat-sys-surface);
+  --mat-fab-foreground-color: var(--mat-sys-on-surface);
+
+  border: 1px solid var(--mat-sys-on-surface);;
+  box-shadow: none;
+}

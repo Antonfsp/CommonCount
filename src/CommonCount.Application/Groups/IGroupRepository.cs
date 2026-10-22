@@ -6,7 +6,7 @@ public interface IGroupRepository
 {
     Task<Group?> GetByIdAsync(int groupId);
     Task<Group?> GetGroupWithMembersForUserAsync(int groupId, int userId);
-    Task<Group?> GetByInviteCodeAsync(string inviteCode);
+    Task<Group?> GetByInviteCodeWithMembersAsync(string inviteCode);
     Task<List<Group>> GetGroupsByUserIdAsync(int userId);
     Task<List<Expense>?> GetExpensesForUserAsync(int groupId, int userId);
     Task<Expense?> GetExpenseByIdAsync(int expenseId);

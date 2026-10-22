@@ -2,13 +2,14 @@ namespace CommonCount.Application.Groups;
 
 public class JoinGroupPreviewResponse
 {
-    public int GroupId { get; set; }
+    public string InviteCode { get; set; } = string.Empty;
     public string GroupName { get; set; } = string.Empty;
-    public List<UnclaimedMemberResponse> UnclaimedMembers { get; set; } = new();
+    public List<GroupMemberResponse> Members { get; set; } = new();
 }
 
-public class UnclaimedMemberResponse
+public class GroupMemberResponse
 {
     public int MemberId { get; set; }
     public string DisplayName { get; set; } = string.Empty;
+    public bool IsClaimed { get; set; }
 }
